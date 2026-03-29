@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>双球对决</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --danger: #f85149;
+      --ok: #3fb950;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 1rem;
+    }
+    .layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      align-items: flex-start;
+      justify-content: center;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .wide-panel {
+      max-width: 920px;
+      width: 100%;
+      margin: 0 auto 1rem;
+    }
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.6rem;
+      align-items: end;
+      margin-top: 0.75rem;
+    }
+    .data-grid label { font-size: 0.75rem; }
+    .data-grid h3 {
+      grid-column: 1 / -1;
+      margin: 0.5rem 0 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .data-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+    .main-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1 1 520px;
+      min-width: 280px;
+    }
+    h1 {
+      margin: 0 0 0.25rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .panel {
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: 1rem;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .side-panel {
+      flex: 0 1 300px;
+      min-width: 260px;
+      max-width: 340px;
+    }
+    .side-panel h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+      margin-bottom: 0.75rem;
+    }
+    .row:last-child { margin-bottom: 0; }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    input[type="text"],
+    input[type="number"] {
+      background: #0d1117;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 0.45rem 0.6rem;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+    input[type="file"] {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    select {
+      background: #0d1117;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 0.45rem 0.6rem;
+      min-width: 140px;
+      font-size: 0.9rem;
+    }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      filter: none;
+    }
+    button.secondary {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: var(--text);
+    }
+    button.danger {
+      background: rgba(248,81,73,0.2);
+      color: #f85149;
+      border: 1px solid rgba(248,81,73,0.4);
+    }
+    #arena-wrap {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.12);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+    canvas {
+      display: block;
+      background: linear-gradient(180deg, #121820 0%, #0a0e12 100%);
+    }
+    .hud {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      max-width: 520px;
+      width: 100%;
+      margin-top: 0.75rem;
+    }
+    .hud-card {
+      background: var(--panel);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .hud-card .name {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    .bar-outer {
+      height: 10px;
+      background: rgba(0,0,0,0.35);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .bar-inner {
+      height: 100%;
+      border-radius: 5px;
+    }
+    .hud-card.a .bar-inner { background: linear-gradient(90deg, #58a6ff, #388bfd); }
+    .hud-card.b .bar-inner { background: linear-gradient(90deg, #f778ba, #db61a2); }
+    .hp-text {
+      margin-top: 0.35rem;
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+    }
+    #status {
+      text-align: center;
+      margin-top: 0.75rem;
+      min-height: 1.5rem;
+      font-size: 1rem;
+    }
+    #status.win { color: var(--ok); }
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .custom-list {
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .custom-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+      padding: 0.25rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .custom-list button.mini {
+      padding: 0.2rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <div class="main-col">
+      <h1>双球对决</h1>
+      <p class="sub">近战碰撞扣血；远程按间隔发射飞弹。一方血量归零后消失，另一方继续运动，点「停止」结束。</p>
+
+      <div class="panel">
+        <div class="row">
+          <label>球 A（左）
+            <select id="pickA" aria-label="球 A 类型"></select>
+          </label>
+          <label>球 B（右）
+            <select id="pickB" aria-label="球 B 类型"></select>
+          </label>
+        </div>
+        <div class="row actions">
+          <button type="button" id="btnStart">开始对战</button>
+          <button type="button" class="secondary" id="btnStop" disabled>停止</button>
+          <button type="button" class="secondary" id="btnReset">重置</button>
+        </div>
+        <div class="row">
+          <label style="flex:1;min-width:180px">场地缩至一半边长所需时间（秒）
+            <input type="number" id="arenaShrinkSec" min="3" max="600" value="45" step="1" />
+          </label>
+        </div>
+      </div>
+
+      <div id="arena-wrap">
+        <canvas id="cv" width="500" height="360"></canvas>
+      </div>
+
+      <div class="hud">
+        <div class="hud-card a" id="hudA">
+          <div class="name">球 A</div>
+          <div class="bar-outer"><div class="bar-inner" id="barA" style="width:100%"></div></div>
+          <div class="hp-text" id="hpA">100 / 100</div>
+        </div>
+        <div class="hud-card b" id="hudB">
+          <div class="name">球 B</div>
+          <div class="bar-outer"><div class="bar-inner" id="barB" style="width:100%"></div></div>
+          <div class="hp-text" id="hpB">100 / 100</div>
+        </div>
+      </div>
+      <p id="status"></p>
+    </div>
+
+    <aside class="panel side-panel">
+      <h2>新增小球</h2>
+      <div class="row">
+        <label style="flex:1;min-width:120px">名称
+          <input type="text" id="custName" placeholder="例如：我的火球" maxlength="16" />
+        </label>
+      </div>
+      <div class="row">
+        <label style="flex:1;min-width:100px">血量
+          <input type="number" id="custHp" min="1" max="999" value="100" step="1" />
+        </label>
+        <label style="flex:1;min-width:100px">速度
+          <input type="number" id="custSpeed" min="25" max="250" value="110" step="5" />
+        </label>
+      </div>
+      <div class="row">
+        <label style="width:100%">外观图片（可选，整张图作为小球外观）
+          <input type="file" id="custFile" accept="image/*" />
+        </label>
+      </div>
+      <div class="row actions">
+        <button type="button" id="btnAddCustom">保存到列表</button>
+      </div>
+      <p class="hint">保存后出现在下拉框。自定义为近战球：碰撞伤害 11，质量 1，半径同标准球；图片为整张精灵铺满边长 2×半径。</p>
+      <div class="custom-list" id="customListWrap">
+        <strong style="color:var(--muted)">已保存的自定义：</strong>
+        <ul id="customList" style="margin:0.5rem 0 0;padding-left:1.1rem;list-style:none"></ul>
+      </div>
+    </aside>
+
+    <section class="panel wide-panel data-panel" id="dataPanel">
+      <h2 style="margin:0 0 0.5rem;font-size:1.05rem">小球数据管理</h2>
+      <p class="hint" style="margin:0 0 0.5rem">编辑后点「保存当前」写入本地；预设与自定义分开保存。远程球可改 CD、飞弹伤害等。</p>
+      <div class="row">
+        <label style="flex:1;min-width:200px">选择小球
+          <select id="dataPick"></select>
+        </label>
+      </div>
+      <div class="data-grid" id="dataGridPreset">
+        <h3>通用</h3>
+        <label>血量 <input type="number" id="d_baseHp" min="1" max="999" step="1" /></label>
+        <label>速度 <input type="number" id="d_speed" min="1" max="400" step="1" /></label>
+        <label>半径 <input type="number" id="d_radius" min="4" max="80" step="1" /></label>
+        <label>质量 <input type="number" id="d_mass" min="0.2" max="5" step="0.05" /></label>
+        <label>近战伤害 <input type="number" id="d_collisionDamage" min="0" max="99" step="1" /></label>
+        <label>后坐力（像素） <input type="number" id="d_recoil" min="0" max="60" step="1" /></label>
+        <h3>远程飞弹（仅远程球）</h3>
+        <label>发射间隔（秒） <input type="number" id="d_fireInterval" min="0.05" max="5" step="0.05" /></label>
+        <label>飞弹速度 <input type="number" id="d_rp_speed" min="20" max="500" step="5" /></label>
+        <label>飞弹伤害 <input type="number" id="d_rp_damage" min="1" max="99" step="1" /></label>
+        <label>飞弹半径 <input type="number" id="d_rp_radius" min="2" max="30" step="1" /></label>
+        <label>飞弹存活（秒） <input type="number" id="d_rp_lifetime" min="0.2" max="10" step="0.1" /></label>
+        <label>每次数量 <input type="number" id="d_rp_count" min="1" max="12" step="1" /></label>
+        <label>散射角（弧度） <input type="number" id="d_rp_spread" min="0" max="2" step="0.05" /></label>
+        <div class="data-actions">
+          <button type="button" id="btnDataSave">保存当前</button>
+          <button type="button" class="secondary" id="btnDataReset">恢复默认</button>
+        </div>
+      </div>
+      <div class="data-grid" id="dataGridCustom" style="display:none">
+        <h3>自定义球</h3>
+        <label>血量 <input type="number" id="dc_baseHp" min="1" max="999" step="1" /></label>
+        <label>速度 <input type="number" id="dc_speed" min="1" max="400" step="1" /></label>
+        <label>半径 <input type="number" id="dc_radius" min="4" max="80" step="1" /></label>
+        <label>近战伤害 <input type="number" id="dc_collisionDamage" min="0" max="99" step="1" /></label>
+        <label>后坐力（像素） <input type="number" id="dc_recoil" min="0" max="60" step="1" /></label>
+        <div class="data-actions">
+          <button type="button" id="btnDataSaveCustom">保存自定义</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+(function () {
+  const STORAGE_KEY = "ball-duel-customs-v1";
+  const TYPE_OVERRIDES_KEY = "ball-duel-type-overrides-v1";
+
+  /** 玩家对预设球的覆盖（与 TYPES 深度合并） */
+  let typeOverrides = {};
+
+  /** rangedProjectile：远程球碰撞不造成近战伤害，改为发射飞弹 */
+  const TYPES = {
+    standard: {
+      id: "standard",
+      label: "标准球",
+      baseHp: 100,
+      radius: 29,
+      speed: 110,
+      mass: 1,
+      collisionDamage: 11,
+      recoil: 12,
+      attackMode: "melee",
+      color: "#58a6ff",
+      imageDataUrl: "",
+    },
+    heavy: {
+      id: "heavy",
+      label: "重球",
+      baseHp: 125,
+      radius: 35,
+      speed: 70,
+      mass: 1.85,
+      collisionDamage: 14,
+      recoil: 8,
+      attackMode: "melee",
+      color: "#79c0ff",
+      imageDataUrl: "",
+    },
+    fast: {
+      id: "fast",
+      label: "快球",
+      baseHp: 82,
+      radius: 24,
+      speed: 150,
+      mass: 0.72,
+      collisionDamage: 7,
+      recoil: 16,
+      attackMode: "melee",
+      color: "#56d364",
+      imageDataUrl: "",
+    },
+    spike: {
+      id: "spike",
+      label: "刺球",
+      baseHp: 88,
+      radius: 27,
+      speed: 105,
+      mass: 0.95,
+      collisionDamage: 19,
+      recoil: 14,
+      attackMode: "melee",
+      color: "#ffa657",
+      imageDataUrl: "",
+    },
+    /** 远程：单发高速飞弹 */
+    sniper: {
+      id: "sniper",
+      label: "飞弹球",
+      baseHp: 92,
+      radius: 28,
+      speed: 100,
+      mass: 1,
+      collisionDamage: 0,
+      recoil: 11,
+      attackMode: "ranged",
+      color: "#7ee787",
+      imageDataUrl: "",
+      rangedProjectile: {
+        count: 1,
+        spread: 0,
+        speed: 210,
+        damage: 17,
+        radius: 6,
+        lifetime: 2.2,
+        fireInterval: 0.32,
+      },
+    },
+    /** 远程：三发散射 */
+    shotgun: {
+      id: "shotgun",
+      label: "散弹球",
+      baseHp: 95,
+      radius: 31,
+      speed: 88,
+      mass: 1.1,
+      collisionDamage: 0,
+      recoil: 13,
+      attackMode: "ranged",
+      color: "#d2a8ff",
+      imageDataUrl: "",
+      rangedProjectile: {
+        count: 3,
+        spread: 0.42,
+        speed: 180,
+        damage: 7,
+        radius: 4,
+        lifetime: 1.6,
+        fireInterval: 0.52,
+      },
+    },
+    /** 远程：单发慢速高伤大弹 */
+    orbCaster: {
+      id: "orbCaster",
+      label: "法球球",
+      baseHp: 90,
+      radius: 29,
+      speed: 92,
+      mass: 1,
+      collisionDamage: 0,
+      recoil: 10,
+      attackMode: "ranged",
+      color: "#ff7b72",
+      imageDataUrl: "",
+      rangedProjectile: {
+        count: 1,
+        spread: 0,
+        speed: 130,
+        damage: 24,
+        radius: 9,
+        lifetime: 2.8,
+        fireInterval: 0.45,
+      },
+    },
+  };
+
+  function loadTypeOverrides() {
+    try {
+      const raw = localStorage.getItem(TYPE_OVERRIDES_KEY);
+      const o = raw ? JSON.parse(raw) : {};
+      typeOverrides = o && typeof o === "object" ? o : {};
+    } catch {
+      typeOverrides = {};
+    }
+  }
+
+  function saveTypeOverrides() {
+    localStorage.setItem(TYPE_OVERRIDES_KEY, JSON.stringify(typeOverrides));
+  }
+
+  function mergeTypeDef(id) {
+    const base = TYPES[id];
+    if (!base) return null;
+    const ov = typeOverrides[id] || {};
+    const out = { ...base, ...ov, attackMode: base.attackMode };
+    if (base.rangedProjectile) {
+      out.rangedProjectile = { ...base.rangedProjectile, ...(ov.rangedProjectile || {}) };
+    } else {
+      delete out.rangedProjectile;
+    }
+    return out;
+  }
+
+  const RESTITUTION_WALL = 0.995;
+  /** 每步内迭代次数，彻底消除重叠，避免两球粘在一起 */
+  const BALL_PAIR_SOLVER_ITERS = 8;
+  /** 受伤后无法再次受伤的无敌时间（毫秒） */
+  const DAMAGE_INVULN_MS = 500;
+  const SPEED_DAMAGE_FACTOR = 0.016;
+  /** 受击闪白持续时间（秒） */
+  const HIT_FLASH_DURATION = 0.14;
+  /** 阵亡位置残影闪白（秒） */
+  const DEATH_FLASH_DURATION = 0.16;
+
+  /** 固定时间步，保证物理与显示解耦、运动顺滑 */
+  const FIXED_DT = 1 / 120;
+  const MAX_STEPS_PER_FRAME = 12;
+
+  const cv = document.getElementById("cv");
+  const ctx = cv.getContext("2d", { alpha: false });
+  const pickA = document.getElementById("pickA");
+  const pickB = document.getElementById("pickB");
+  const btnStart = document.getElementById("btnStart");
+  const btnStop = document.getElementById("btnStop");
+  const btnReset = document.getElementById("btnReset");
+  const barA = document.getElementById("barA");
+  const barB = document.getElementById("barB");
+  const hpAEl = document.getElementById("hpA");
+  const hpBEl = document.getElementById("hpB");
+  const hudAName = document.querySelector("#hudA .name");
+  const hudBName = document.querySelector("#hudB .name");
+  const statusEl = document.getElementById("status");
+  const custName = document.getElementById("custName");
+  const custHp = document.getElementById("custHp");
+  const custSpeed = document.getElementById("custSpeed");
+  const custFile = document.getElementById("custFile");
+  const btnAddCustom = document.getElementById("btnAddCustom");
+  const customList = document.getElementById("customList");
+  const arenaShrinkSec = document.getElementById("arenaShrinkSec");
+  const dataPick = document.getElementById("dataPick");
+  const dataGridPreset = document.getElementById("dataGridPreset");
+  const dataGridCustom = document.getElementById("dataGridCustom");
+  const d_baseHp = document.getElementById("d_baseHp");
+  const d_speed = document.getElementById("d_speed");
+  const d_radius = document.getElementById("d_radius");
+  const d_mass = document.getElementById("d_mass");
+  const d_collisionDamage = document.getElementById("d_collisionDamage");
+  const d_recoil = document.getElementById("d_recoil");
+  const d_fireInterval = document.getElementById("d_fireInterval");
+  const d_rp_speed = document.getElementById("d_rp_speed");
+  const d_rp_damage = document.getElementById("d_rp_damage");
+  const d_rp_radius = document.getElementById("d_rp_radius");
+  const d_rp_lifetime = document.getElementById("d_rp_lifetime");
+  const d_rp_count = document.getElementById("d_rp_count");
+  const d_rp_spread = document.getElementById("d_rp_spread");
+  const btnDataSave = document.getElementById("btnDataSave");
+  const btnDataReset = document.getElementById("btnDataReset");
+  const dc_baseHp = document.getElementById("dc_baseHp");
+  const dc_speed = document.getElementById("dc_speed");
+  const dc_radius = document.getElementById("dc_radius");
+  const dc_collisionDamage = document.getElementById("dc_collisionDamage");
+  const dc_recoil = document.getElementById("dc_recoil");
+  const btnDataSaveCustom = document.getElementById("btnDataSaveCustom");
+
+  /** id -> 完整 def（含预加载的 imageEl） */
+  const registry = {};
+
+  let customEntries = [];
+
+  function loadCustomsFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      customEntries = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(customEntries)) customEntries = [];
+    } catch {
+      customEntries = [];
+    }
+  }
+
+  function saveCustomsToStorage() {
+    const slim = customEntries.map((e) => {
+      const o = {
+        id: e.id,
+        label: e.label,
+        baseHp: e.baseHp,
+        speed: e.speed,
+        imageDataUrl: e.imageDataUrl || "",
+      };
+      if (e.radius != null) o.radius = e.radius;
+      if (e.mass != null) o.mass = e.mass;
+      if (e.collisionDamage != null) o.collisionDamage = e.collisionDamage;
+      if (e.recoil != null) o.recoil = e.recoil;
+      return o;
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+  }
+
+  function defFromEntry(entry) {
+    return {
+      id: entry.id,
+      label: entry.label,
+      baseHp: entry.baseHp,
+      radius: entry.radius != null ? entry.radius : 29,
+      speed: entry.speed,
+      mass: entry.mass != null ? entry.mass : 1,
+      collisionDamage: entry.collisionDamage != null ? entry.collisionDamage : 11,
+      recoil: entry.recoil != null ? entry.recoil : 12,
+      attackMode: "melee",
+      color: "#a371f7",
+      imageDataUrl: entry.imageDataUrl || "",
+    };
+  }
+
+  function preloadDefImage(def) {
+    if (!def.imageDataUrl) {
+      def.imageEl = null;
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        def.imageEl = img;
+        resolve();
+      };
+      img.onerror = () => {
+        def.imageEl = null;
+        resolve();
+      };
+      img.src = def.imageDataUrl;
+    });
+  }
+
+  function rebuildRegistry() {
+    Object.keys(registry).forEach((k) => delete registry[k]);
+    Object.keys(TYPES).forEach((k) => {
+      const m = mergeTypeDef(k);
+      registry[k] = { ...m, imageEl: null };
+    });
+    customEntries.forEach((e) => {
+      const d = defFromEntry(e);
+      registry[e.id] = d;
+    });
+  }
+
+  function fillSelect(sel) {
+    sel.innerHTML = "";
+    const presets = document.createElement("optgroup");
+    presets.label = "预设";
+    Object.keys(TYPES).forEach((kid) => {
+      const t = mergeTypeDef(kid);
+      const o = document.createElement("option");
+      o.value = t.id;
+      const atk =
+        t.attackMode === "ranged"
+          ? "远程"
+          : `攻${t.collisionDamage}`;
+      o.textContent = `${t.label}（${atk} 血${t.baseHp}）`;
+      presets.appendChild(o);
+    });
+    sel.appendChild(presets);
+    if (customEntries.length) {
+      const g = document.createElement("optgroup");
+      g.label = "自定义";
+      customEntries.forEach((e) => {
+        const o = document.createElement("option");
+        o.value = e.id;
+        o.textContent = `${e.label}（血${e.baseHp} 速${e.speed}）`;
+        g.appendChild(o);
+      });
+      sel.appendChild(g);
+    }
+  }
+
+  function refreshSelects() {
+    const va = pickA.value;
+    const vb = pickB.value;
+    rebuildRegistry();
+    fillSelect(pickA);
+    fillSelect(pickB);
+    if (registry[va]) pickA.value = va;
+    else pickA.value = "standard";
+    if (registry[vb]) pickB.value = vb;
+    else pickB.value = "spike";
+    refreshDataPick();
+  }
+
+  function refreshDataPick() {
+    if (!dataPick) return;
+    const prev = dataPick.value;
+    dataPick.innerHTML = "";
+    const og = document.createElement("optgroup");
+    og.label = "预设";
+    Object.keys(TYPES).forEach((id) => {
+      const t = mergeTypeDef(id);
+      const o = document.createElement("option");
+      o.value = id;
+      o.textContent = t.label;
+      og.appendChild(o);
+    });
+    dataPick.appendChild(og);
+    if (customEntries.length) {
+      const g2 = document.createElement("optgroup");
+      g2.label = "自定义";
+      customEntries.forEach((e) => {
+        const o = document.createElement("option");
+        o.value = "c:" + e.id;
+        o.textContent = e.label;
+        g2.appendChild(o);
+      });
+      dataPick.appendChild(g2);
+    }
+    const ok = Array.from(dataPick.options).some((o) => o.value === prev);
+    dataPick.value = ok ? prev : Object.keys(TYPES)[0];
+  }
+
+  function populateDataForm() {
+    if (!dataPick) return;
+    const v = dataPick.value;
+    if (v.startsWith("c:")) {
+      dataGridPreset.style.display = "none";
+      dataGridCustom.style.display = "grid";
+      const id = v.slice(2);
+      const e = customEntries.find((x) => x.id === id);
+      if (!e) return;
+      dc_baseHp.value = e.baseHp;
+      dc_speed.value = e.speed;
+      dc_radius.value = e.radius != null ? e.radius : 29;
+      dc_collisionDamage.value = e.collisionDamage != null ? e.collisionDamage : 11;
+      if (dc_recoil) dc_recoil.value = e.recoil != null ? e.recoil : 12;
+      return;
+    }
+    dataGridPreset.style.display = "grid";
+    dataGridCustom.style.display = "none";
+    const t = mergeTypeDef(v);
+    d_baseHp.value = t.baseHp;
+    d_speed.value = t.speed;
+    d_radius.value = t.radius;
+    d_mass.value = t.mass;
+    d_collisionDamage.value = t.collisionDamage;
+    if (d_recoil) d_recoil.value = t.recoil != null ? t.recoil : 12;
+    const rp = t.rangedProjectile;
+    const isRanged = t.attackMode === "ranged";
+    [
+      d_fireInterval,
+      d_rp_speed,
+      d_rp_damage,
+      d_rp_radius,
+      d_rp_lifetime,
+      d_rp_count,
+      d_rp_spread,
+    ].forEach((el) => {
+      if (el) el.disabled = !isRanged;
+    });
+    if (rp) {
+      d_fireInterval.value = rp.fireInterval;
+      d_rp_speed.value = rp.speed;
+      d_rp_damage.value = rp.damage;
+      d_rp_radius.value = rp.radius;
+      d_rp_lifetime.value = rp.lifetime;
+      d_rp_count.value = rp.count;
+      d_rp_spread.value = rp.spread;
+    }
+  }
+
+  function renderCustomList() {
+    customList.innerHTML = "";
+    customEntries.forEach((e) => {
+      const li = document.createElement("li");
+      const span = document.createElement("span");
+      span.textContent = `${e.label}`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mini danger";
+      btn.textContent = "删除";
+      btn.addEventListener("click", () => {
+        customEntries = customEntries.filter((x) => x.id !== e.id);
+        saveCustomsToStorage();
+        refreshSelects();
+        renderCustomList();
+        resetMatch();
+      });
+      li.appendChild(span);
+      li.appendChild(btn);
+      customList.appendChild(li);
+    });
+  }
+
+  loadTypeOverrides();
+  loadCustomsFromStorage();
+  rebuildRegistry();
+  fillSelect(pickA);
+  fillSelect(pickB);
+  pickA.value = "standard";
+  pickB.value = "spike";
+  renderCustomList();
+  refreshDataPick();
+  populateDataForm();
+
+  let running = false;
+  let balls = [];
+  /** @type {{x:number,y:number,vx:number,vy:number,r:number,damage:number,owner:string,life:number}[]} */
+  let projectiles = [];
+  /** @type {{x:number,y:number,r:number,life:number}[]} */
+  let deathFlashes = [];
+  let physicsAccum = 0;
+  let lastT = performance.now();
+  /** 对战开始时间（用于场地收缩） */
+  let matchStartTime = 0;
+  /** 本渲染帧内是否已对本对球施加过后坐力（避免多子步重复位移） */
+  let pairRecoilAppliedThisFrame = false;
+  /** 单方获胜后的结算展示（球居中 + WINNER 文案 + 庆祝音效） */
+  let victorySettled = false;
+
+  function getArenaShrinkDurationSec() {
+    const v = parseFloat(arenaShrinkSec && arenaShrinkSec.value);
+    return Number.isFinite(v) && v > 0 ? v : 45;
+  }
+
+  function getArenaBounds() {
+    const cw = cv.width;
+    const ch = cv.height;
+    if (!running) {
+      return { left: 0, top: 0, right: cw, bottom: ch, width: cw, height: ch };
+    }
+    const dur = getArenaShrinkDurationSec();
+    const t = Math.min(1, (performance.now() - matchStartTime) / 1000 / dur);
+    const w = cw * (1 - 0.5 * t);
+    const h = ch * (1 - 0.5 * t);
+    const left = (cw - w) / 2;
+    const top = (ch - h) / 2;
+    return { left, top, right: left + w, bottom: top + h, width: w, height: h };
+  }
+
+  function clampBallToArena(b) {
+    const r = b.def.radius;
+    const { left, top, right, bottom } = getArenaBounds();
+    b.x = Math.max(left + r, Math.min(right - r, b.x));
+    b.y = Math.max(top + r, Math.min(bottom - r, b.y));
+  }
+
+  let audioCtx = null;
+  function getAudioContext() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+  }
+  function resumeAudio() {
+    const c = getAudioContext();
+    if (c.state === "suspended") c.resume();
+  }
+  /** 近战碰撞 */
+  function playMeleeHit() {
+    try {
+      resumeAudio();
+      const c = getAudioContext();
+      const t0 = c.currentTime;
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(180, t0);
+      osc.frequency.exponentialRampToValueAtTime(90, t0 + 0.08);
+      g.gain.setValueAtTime(0.12, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.1);
+      osc.connect(g);
+      g.connect(c.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.11);
+    } catch (_) {}
+  }
+  /** 发射飞弹 */
+  function playShoot() {
+    try {
+      resumeAudio();
+      const c = getAudioContext();
+      const t0 = c.currentTime;
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(520, t0);
+      osc.frequency.exponentialRampToValueAtTime(320, t0 + 0.06);
+      g.gain.setValueAtTime(0.1, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.08);
+      osc.connect(g);
+      g.connect(c.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.09);
+    } catch (_) {}
+  }
+  /** 飞弹命中 */
+  function playProjectileHit() {
+    try {
+      resumeAudio();
+      const c = getAudioContext();
+      const t0 = c.currentTime;
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(660, t0);
+      osc.frequency.exponentialRampToValueAtTime(220, t0 + 0.12);
+      g.gain.setValueAtTime(0.11, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
+      osc.connect(g);
+      g.connect(c.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.15);
+    } catch (_) {}
+  }
+
+  /** 单方获胜时播放一次的上行庆祝琶音 */
+  function playVictoryFanfare() {
+    try {
+      resumeAudio();
+      const c = getAudioContext();
+      const t0 = c.currentTime;
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, i) => {
+        const t = t0 + i * 0.11;
+        const osc = c.createOscillator();
+        const g = c.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.14, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+        osc.connect(g);
+        g.connect(c.destination);
+        osc.start(t);
+        osc.stop(t + 0.38);
+      });
+    } catch (_) {}
+  }
+
+  document.body.addEventListener(
+    "click",
+    () => resumeAudio(),
+    { once: true }
+  );
+
+  /** 从发射者边缘指向目标持续发射飞弹（非碰撞触发） */
+  function spawnProjectileVolley(attacker, target) {
+    const def = attacker.def;
+    const rp = def.rangedProjectile;
+    if (!rp || def.attackMode !== "ranged") return;
+    const dx = target.x - attacker.x;
+    const dy = target.y - attacker.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const baseAngle = Math.atan2(dy, dx);
+    const nx = dx / len;
+    const ny = dy / len;
+    const ar = attacker.def.radius;
+    const spawnPad = 3;
+    const sx = attacker.x + nx * (ar + spawnPad);
+    const sy = attacker.y + ny * (ar + spawnPad);
+    playShoot();
+    for (let i = 0; i < rp.count; i++) {
+      const off = (i - (rp.count - 1) / 2) * rp.spread;
+      const ang = baseAngle + off;
+      const ca = Math.cos(ang);
+      const sa = Math.sin(ang);
+      projectiles.push({
+        x: sx + ca * 2,
+        y: sy + sa * 2,
+        vx: ca * rp.speed,
+        vy: sa * rp.speed,
+        r: rp.radius,
+        damage: rp.damage,
+        owner: attacker.side,
+        life: rp.lifetime,
+      });
+    }
+  }
+
+  function tickRangedFire(dt) {
+    if (!running || balls.length !== 2) return;
+    const [a, b] = balls;
+    for (const attacker of [a, b]) {
+      if (attacker.def.attackMode !== "ranged") continue;
+      const target = attacker.side === "a" ? b : a;
+      const rp = attacker.def.rangedProjectile;
+      const interval = rp.fireInterval != null ? rp.fireInterval : 0.4;
+      attacker.fireTimer += dt;
+      while (attacker.fireTimer >= interval) {
+        attacker.fireTimer -= interval;
+        spawnProjectileVolley(attacker, target);
+      }
+    }
+  }
+
+  function updateProjectiles(dt) {
+    if (!running || balls.length === 0) return;
+    const { left, top, right, bottom } = getArenaBounds();
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+      if (p.life <= 0) {
+        projectiles.splice(i, 1);
+        continue;
+      }
+      if (
+        p.x - p.r < left ||
+        p.x + p.r > right ||
+        p.y - p.r < top ||
+        p.y + p.r > bottom
+      ) {
+        projectiles.splice(i, 1);
+        continue;
+      }
+      for (const b of balls) {
+        if (b.side === p.owner) continue;
+        const ddx = b.x - p.x;
+        const ddy = b.y - p.y;
+        const rr = b.def.radius + p.r;
+        if (ddx * ddx + ddy * ddy < rr * rr) {
+          if (damageBallIfVulnerable(b, p.damage)) {
+            playProjectileHit();
+          }
+          projectiles.splice(i, 1);
+          break;
+        }
+      }
+    }
+  }
+
+  function getDef(typeId) {
+    return registry[typeId] || mergeTypeDef("standard");
+  }
+
+  function makeBall(side, typeId) {
+    const def = getDef(typeId);
+    const { left, top, right, bottom } = getArenaBounds();
+    const margin = 48;
+    const midY = (top + bottom) / 2;
+    const x =
+      side === "a"
+        ? left + margin + def.radius
+        : right - margin - def.radius;
+    const y = midY + (side === "a" ? -30 : 30);
+    const angle = side === "a" ? (Math.random() * 0.6 + 0.2) * Math.PI : (Math.random() * 0.6 - 0.8) * Math.PI;
+    const sp = def.speed * (0.88 + Math.random() * 0.12);
+    return {
+      side,
+      def,
+      x,
+      y,
+      vx: Math.cos(angle) * sp * (side === "a" ? 1 : -1),
+      vy: Math.sin(angle) * sp,
+      hp: def.baseHp,
+      maxHp: def.baseHp,
+      /** 远程：距下次连发已累积的时间（秒） */
+      fireTimer: def.attackMode === "ranged" ? Math.random() * 0.2 : 0,
+      hitFlash: 0,
+      /** 无敌截止：performance.now() 小于此值时不扣血；0 表示未处于无敌 */
+      invulnUntil: 0,
+    };
+  }
+
+  function notifyBallDamage(b) {
+    b.hitFlash = HIT_FLASH_DURATION;
+  }
+
+  /** 仅在不在无敌时扣血并进入无敌；返回是否实际扣血 */
+  function damageBallIfVulnerable(b, amount) {
+    if (amount <= 0) return false;
+    const now = performance.now();
+    if (now < (b.invulnUntil || 0)) return false;
+    b.hp -= amount;
+    b.invulnUntil = now + DAMAGE_INVULN_MS;
+    notifyBallDamage(b);
+    return true;
+  }
+
+  function resetHudNames() {
+    const ta = getDef(pickA.value);
+    const tb = getDef(pickB.value);
+    hudAName.textContent = `球 A · ${ta.label}`;
+    hudBName.textContent = `球 B · ${tb.label}`;
+  }
+
+  function updateHud() {
+    const ta = getDef(pickA.value);
+    const tb = getDef(pickB.value);
+    if (balls.length === 2) {
+      const [a, b] = balls;
+      const pa = Math.max(0, (a.hp / a.maxHp) * 100);
+      const pb = Math.max(0, (b.hp / b.maxHp) * 100);
+      barA.style.width = pa + "%";
+      barB.style.width = pb + "%";
+      hpAEl.textContent = `${Math.max(0, Math.ceil(a.hp))} / ${a.maxHp}`;
+      hpBEl.textContent = `${Math.max(0, Math.ceil(b.hp))} / ${b.maxHp}`;
+    } else if (balls.length === 1) {
+      const b = balls[0];
+      if (b.side === "a") {
+        barA.style.width = `${Math.max(0, (b.hp / b.maxHp) * 100)}%`;
+        barB.style.width = "0%";
+        hpAEl.textContent = `${Math.max(0, Math.ceil(b.hp))} / ${b.maxHp}`;
+        hpBEl.textContent = `0 / ${tb.baseHp}`;
+      } else {
+        barA.style.width = "0%";
+        barB.style.width = `${Math.max(0, (b.hp / b.maxHp) * 100)}%`;
+        hpAEl.textContent = `0 / ${ta.baseHp}`;
+        hpBEl.textContent = `${Math.max(0, Math.ceil(b.hp))} / ${b.maxHp}`;
+      }
+    } else {
+      barA.style.width = "0%";
+      barB.style.width = "0%";
+      hpAEl.textContent = `0 / ${ta.baseHp}`;
+      hpBEl.textContent = `0 / ${tb.baseHp}`;
+    }
+  }
+
+  function cullDeadBalls() {
+    if (!running || balls.length === 0) return;
+    const dying = balls.filter((b) => b.hp <= 0);
+    if (dying.length === 0) return;
+    for (const b of dying) {
+      deathFlashes.push({
+        x: b.x,
+        y: b.y,
+        r: b.def.radius,
+        life: DEATH_FLASH_DURATION,
+      });
+    }
+    if (dying.length >= 2) {
+      victorySettled = false;
+      statusEl.textContent = "平局：双方同时耗尽";
+      statusEl.className = "";
+      balls = [];
+      projectiles = [];
+      return;
+    }
+    const gone = dying[0];
+    balls = balls.filter((b) => b.hp > 0);
+    victorySettled = true;
+    projectiles = [];
+    running = false;
+    btnStart.disabled = false;
+    btnStop.disabled = true;
+    setControlsDisabled(false);
+    const winBall = balls[0];
+    winBall.vx = 0;
+    winBall.vy = 0;
+    winBall.hitFlash = 0;
+    winBall.x = cv.width / 2;
+    winBall.y = cv.height / 2;
+    clampBallToArena(winBall);
+    playVictoryFanfare();
+    statusEl.textContent =
+      gone.side === "a"
+        ? "球 B 获胜！可点「重置」或「开始对战」再来一局。"
+        : "球 A 获胜！可点「重置」或「开始对战」再来一局。";
+    statusEl.className = "win";
+  }
+
+  function wallCollide(b) {
+    const r = b.def.radius;
+    const { left, top, right, bottom } = getArenaBounds();
+    if (b.x - r < left) {
+      b.x = left + r;
+      b.vx *= -RESTITUTION_WALL;
+    } else if (b.x + r > right) {
+      b.x = right - r;
+      b.vx *= -RESTITUTION_WALL;
+    }
+    if (b.y - r < top) {
+      b.y = top + r;
+      b.vy *= -RESTITUTION_WALL;
+    } else if (b.y + r > bottom) {
+      b.y = bottom - r;
+      b.vy *= -RESTITUTION_WALL;
+    }
+  }
+
+  /** 碰撞后沿法线背向分离的最小速率（像素/秒） */
+  const MIN_FLEE_SPEED = 75;
+
+  /**
+   * 两圆碰撞：伤害 + 后坐力位移；速度改为严格沿连心线背向（球1 为 −n，球2 为 +n）。
+   * 迭代仅做位置分离，不再叠加斜向冲量。
+   */
+  function resolveBallCollision(b1, b2) {
+    const m1 = b1.def.mass;
+    const m2 = b2.def.mass;
+    const r1 = b1.def.radius;
+    const r2 = b2.def.radius;
+    const minDist = r1 + r2;
+    const invM = 1 / (m1 + m2);
+
+    let dx = b2.x - b1.x;
+    let dy = b2.y - b1.y;
+    let dist = Math.hypot(dx, dy);
+
+    if (dist < 1e-5) {
+      dx = b1.vx - b2.vx;
+      dy = b1.vy - b2.vy;
+      const d2 = Math.hypot(dx, dy);
+      if (d2 < 1e-5) {
+        dx = 1;
+        dy = 0;
+      } else {
+        dx /= d2;
+        dy /= d2;
+      }
+      dist = 1e-5;
+    }
+
+    if (dist < minDist) {
+      const rvx0 = b1.vx - b2.vx;
+      const rvy0 = b1.vy - b2.vy;
+      const relSpeed = Math.hypot(rvx0, rvy0);
+      const bonus = relSpeed * SPEED_DAMAGE_FACTOR;
+      let meleeDealt = false;
+      if (b1.def.attackMode !== "ranged") {
+        const dmgTo2 = b1.def.collisionDamage + bonus;
+        if (damageBallIfVulnerable(b2, dmgTo2)) meleeDealt = true;
+      }
+      if (b2.def.attackMode !== "ranged") {
+        const dmgTo1 = b2.def.collisionDamage + bonus;
+        if (damageBallIfVulnerable(b1, dmgTo1)) meleeDealt = true;
+      }
+      if (meleeDealt) playMeleeHit();
+
+      if (!pairRecoilAppliedThisFrame) {
+        pairRecoilAppliedThisFrame = true;
+        dx = b2.x - b1.x;
+        dy = b2.y - b1.y;
+        const dSep = Math.hypot(dx, dy);
+        let nx;
+        let ny;
+        if (dSep < 1e-6) {
+          nx = 1;
+          ny = 0;
+        } else {
+          nx = dx / dSep;
+          ny = dy / dSep;
+        }
+        const rec1 = b1.def.recoil != null ? b1.def.recoil : 12;
+        const rec2 = b2.def.recoil != null ? b2.def.recoil : 12;
+        b1.x -= nx * rec1;
+        b1.y -= ny * rec1;
+        b2.x += nx * rec2;
+        b2.y += ny * rec2;
+
+        const baseRel = Math.hypot(b1.vx - b2.vx, b1.vy - b2.vy);
+        const s1 = Math.max(Math.hypot(b1.vx, b1.vy), baseRel * 0.55, MIN_FLEE_SPEED);
+        const s2 = Math.max(Math.hypot(b2.vx, b2.vy), baseRel * 0.55, MIN_FLEE_SPEED);
+        b1.vx = -nx * s1;
+        b1.vy = -ny * s1;
+        b2.vx = nx * s2;
+        b2.vy = ny * s2;
+      }
+    }
+
+    for (let iter = 0; iter < BALL_PAIR_SOLVER_ITERS; iter++) {
+      dx = b2.x - b1.x;
+      dy = b2.y - b1.y;
+      dist = Math.hypot(dx, dy);
+
+      if (dist < 1e-6) {
+        const nx = 1;
+        const ny = 0;
+        const pen = minDist;
+        b1.x -= nx * pen * m2 * invM;
+        b1.y -= ny * pen * m2 * invM;
+        b2.x += nx * pen * m1 * invM;
+        b2.y += ny * pen * m1 * invM;
+      } else if (dist < minDist) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const penetration = minDist - dist;
+        b1.x -= nx * penetration * m2 * invM;
+        b1.y -= ny * penetration * m2 * invM;
+        b2.x += nx * penetration * m1 * invM;
+        b2.y += ny * penetration * m1 * invM;
+      } else {
+        break;
+      }
+    }
+  }
+
+  function stepPhysics(dt) {
+    if (!running || balls.length === 0) return;
+
+    for (const b of balls) {
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      if (b.hitFlash > 0) b.hitFlash -= dt;
+    }
+    for (const b of balls) {
+      wallCollide(b);
+      if (running) clampBallToArena(b);
+    }
+
+    if (balls.length >= 2) {
+      resolveBallCollision(balls[0], balls[1]);
+    }
+    tickRangedFire(dt);
+    updateProjectiles(dt);
+    cullDeadBalls();
+    updateHud();
+  }
+
+  function frame(now) {
+    let dt = (now - lastT) / 1000;
+    lastT = now;
+    if (dt > 0.25) dt = 0.25;
+
+    for (let i = deathFlashes.length - 1; i >= 0; i--) {
+      deathFlashes[i].life -= dt;
+      if (deathFlashes[i].life <= 0) deathFlashes.splice(i, 1);
+    }
+
+    pairRecoilAppliedThisFrame = false;
+    physicsAccum += dt;
+    let steps = 0;
+    while (physicsAccum >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
+      stepPhysics(FIXED_DT);
+      physicsAccum -= FIXED_DT;
+      steps++;
+    }
+    if (steps === MAX_STEPS_PER_FRAME) physicsAccum = 0;
+
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  function drawBall(b) {
+    const r = b.def.radius;
+    const img = b.def.imageEl;
+    if (img && img.complete && img.naturalWidth > 0) {
+      ctx.drawImage(img, b.x - r, b.y - r, r * 2, r * 2);
+    } else {
+      const g = ctx.createRadialGradient(
+        b.x - r * 0.35,
+        b.y - r * 0.35,
+        0,
+        b.x,
+        b.y,
+        r
+      );
+      g.addColorStop(0, lighten(b.def.color, 0.25));
+      g.addColorStop(1, b.def.color);
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    if (b.hitFlash > 0) {
+      const k = Math.min(1, b.hitFlash / HIT_FLASH_DURATION);
+      ctx.save();
+      ctx.globalAlpha = 0.35 + k * 0.45;
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, r * 1.05, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    const hpStr = String(Math.max(0, Math.ceil(b.hp)));
+    ctx.font = "bold 14px system-ui,Segoe UI,sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(0,0,0,0.88)";
+    ctx.fillStyle = "#fff";
+    ctx.strokeText(hpStr, b.x, b.y);
+    ctx.fillText(hpStr, b.x, b.y);
+  }
+
+  function drawDeathFlashes() {
+    for (const df of deathFlashes) {
+      const a = Math.max(0, df.life / DEATH_FLASH_DURATION);
+      ctx.save();
+      ctx.globalAlpha = a * 0.55;
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(df.x, df.y, df.r * 1.08, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawProjectile(p) {
+    const g = ctx.createRadialGradient(
+      p.x - p.r * 0.35,
+      p.y - p.r * 0.35,
+      0,
+      p.x,
+      p.y,
+      p.r
+    );
+    if (p.owner === "a") {
+      g.addColorStop(0, "#ffe0b8");
+      g.addColorStop(1, "#ff8c32");
+    } else {
+      g.addColorStop(0, "#ffd0e8");
+      g.addColorStop(1, "#e04070");
+    }
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.55)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  function draw() {
+    const w = cv.width;
+    const h = cv.height;
+    ctx.clearRect(0, 0, w, h);
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, "#121820");
+    bg.addColorStop(1, "#0a0e12");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    const bnd = getArenaBounds();
+    if (running) {
+      ctx.fillStyle = "rgba(0,0,0,0.48)";
+      ctx.fillRect(0, 0, w, bnd.top);
+      ctx.fillRect(0, bnd.bottom, w, h - bnd.bottom);
+      ctx.fillRect(0, bnd.top, bnd.left, bnd.height);
+      ctx.fillRect(bnd.right, bnd.top, w - bnd.right, bnd.height);
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,0.28)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      bnd.left + 1,
+      bnd.top + 1,
+      bnd.width - 2,
+      bnd.height - 2
+    );
+
+    drawDeathFlashes();
+    for (const p of projectiles) drawProjectile(p);
+    for (const b of balls) drawBall(b);
+
+    if (victorySettled && balls.length === 1) {
+      const b = balls[0];
+      const r = b.def.radius;
+      const tx = w / 2;
+      const ty = h / 2 - r - 32;
+      ctx.save();
+      ctx.font = "bold 52px system-ui,Segoe UI,sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.strokeStyle = "rgba(0,0,0,0.55)";
+      ctx.lineWidth = 5;
+      ctx.strokeText("WINNER", tx, ty);
+      const wg = ctx.createLinearGradient(tx - 120, ty - 28, tx + 120, ty + 28);
+      wg.addColorStop(0, "#fff8e1");
+      wg.addColorStop(0.5, "#ffc107");
+      wg.addColorStop(1, "#ff8f00");
+      ctx.fillStyle = wg;
+      ctx.fillText("WINNER", tx, ty);
+      ctx.restore();
+    }
+  }
+
+  function lighten(hex, amt) {
+    const n = hex.replace("#", "");
+    const r = parseInt(n.slice(0, 2), 16);
+    const g = parseInt(n.slice(2, 4), 16);
+    const b = parseInt(n.slice(4, 6), 16);
+    const mix = (c) => Math.min(255, Math.round(c + (255 - c) * amt));
+    return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+  }
+
+  function setControlsDisabled(locked) {
+    pickA.disabled = locked;
+    pickB.disabled = locked;
+    custHp.disabled = locked;
+    custSpeed.disabled = locked;
+    custName.disabled = locked;
+    custFile.disabled = locked;
+    btnAddCustom.disabled = locked;
+    if (arenaShrinkSec) arenaShrinkSec.disabled = locked;
+    document.querySelectorAll(".data-panel input, .data-panel select").forEach((el) => {
+      el.disabled = locked;
+    });
+    if (btnDataSave) btnDataSave.disabled = locked;
+    if (btnDataReset) btnDataReset.disabled = locked;
+    if (btnDataSaveCustom) btnDataSaveCustom.disabled = locked;
+  }
+
+  async function startMatch() {
+    victorySettled = false;
+    statusEl.textContent = "";
+    statusEl.className = "";
+    physicsAccum = 0;
+    projectiles = [];
+    deathFlashes = [];
+    running = true;
+    matchStartTime = performance.now();
+    const da = getDef(pickA.value);
+    const db = getDef(pickB.value);
+    await Promise.all([preloadDefImage(da), preloadDefImage(db)]);
+    balls = [makeBall("a", pickA.value), makeBall("b", pickB.value)];
+    resetHudNames();
+    updateHud();
+    btnStart.disabled = true;
+    btnStop.disabled = false;
+    setControlsDisabled(true);
+  }
+
+  function resetMatch() {
+    victorySettled = false;
+    running = false;
+    btnStart.disabled = false;
+    btnStop.disabled = true;
+    setControlsDisabled(false);
+    statusEl.textContent = "";
+    statusEl.className = "";
+    physicsAccum = 0;
+    matchStartTime = 0;
+    projectiles = [];
+    deathFlashes = [];
+    const da = getDef(pickA.value);
+    const db = getDef(pickB.value);
+    Promise.all([preloadDefImage(da), preloadDefImage(db)]).then(() => {
+      balls = [makeBall("a", pickA.value), makeBall("b", pickB.value)];
+      resetHudNames();
+      updateHud();
+      draw();
+    });
+  }
+
+  btnStart.addEventListener("click", () => startMatch());
+  btnStop.addEventListener("click", () => {
+    if (!running) return;
+    running = false;
+    btnStart.disabled = false;
+    btnStop.disabled = true;
+    setControlsDisabled(false);
+  });
+  btnReset.addEventListener("click", resetMatch);
+
+  if (dataPick) dataPick.addEventListener("change", populateDataForm);
+
+  if (btnDataSave) {
+    btnDataSave.addEventListener("click", () => {
+      const id = dataPick.value;
+      if (id.startsWith("c:")) return;
+      const base = TYPES[id];
+      if (!base) return;
+      const o = {
+        baseHp: parseInt(d_baseHp.value, 10),
+        speed: parseFloat(d_speed.value),
+        radius: parseFloat(d_radius.value),
+        mass: parseFloat(d_mass.value),
+        collisionDamage: parseFloat(d_collisionDamage.value),
+        recoil: parseFloat(d_recoil && d_recoil.value),
+      };
+      if (Object.values(o).some((x) => !Number.isFinite(x))) return;
+      typeOverrides[id] = o;
+      if (base.attackMode === "ranged" && base.rangedProjectile) {
+        const rp = {
+          fireInterval: parseFloat(d_fireInterval.value),
+          speed: parseFloat(d_rp_speed.value),
+          damage: parseFloat(d_rp_damage.value),
+          radius: parseFloat(d_rp_radius.value),
+          lifetime: parseFloat(d_rp_lifetime.value),
+          count: parseInt(d_rp_count.value, 10),
+          spread: parseFloat(d_rp_spread.value),
+        };
+        if (!Object.values(rp).some((x) => !Number.isFinite(x))) {
+          typeOverrides[id].rangedProjectile = rp;
+        }
+      }
+      saveTypeOverrides();
+      rebuildRegistry();
+      const va = pickA.value;
+      const vb = pickB.value;
+      fillSelect(pickA);
+      fillSelect(pickB);
+      if (registry[va]) pickA.value = va;
+      else pickA.value = "standard";
+      if (registry[vb]) pickB.value = vb;
+      else pickB.value = "spike";
+      refreshDataPick();
+      populateDataForm();
+    });
+  }
+
+  if (btnDataReset) {
+    btnDataReset.addEventListener("click", () => {
+      const id = dataPick.value;
+      if (id.startsWith("c:")) return;
+      delete typeOverrides[id];
+      saveTypeOverrides();
+      rebuildRegistry();
+      const va = pickA.value;
+      const vb = pickB.value;
+      fillSelect(pickA);
+      fillSelect(pickB);
+      if (registry[va]) pickA.value = va;
+      else pickA.value = "standard";
+      if (registry[vb]) pickB.value = vb;
+      else pickB.value = "spike";
+      refreshDataPick();
+      populateDataForm();
+    });
+  }
+
+  if (btnDataSaveCustom) {
+    btnDataSaveCustom.addEventListener("click", () => {
+      const v = dataPick.value;
+      if (!v.startsWith("c:")) return;
+      const id = v.slice(2);
+      const e = customEntries.find((x) => x.id === id);
+      if (!e) return;
+      e.baseHp = Math.max(1, Math.min(999, parseInt(dc_baseHp.value, 10) || 100));
+      e.speed = Math.max(1, Math.min(400, parseFloat(dc_speed.value) || 110));
+      e.radius = Math.max(4, Math.min(80, parseFloat(dc_radius.value) || 29));
+      e.collisionDamage = Math.max(0, Math.min(99, parseFloat(dc_collisionDamage.value) || 11));
+      if (dc_recoil) {
+        e.recoil = Math.max(0, Math.min(60, parseFloat(dc_recoil.value) || 12));
+      }
+      saveCustomsToStorage();
+      refreshSelects();
+      populateDataForm();
+    });
+  }
+
+  btnAddCustom.addEventListener("click", () => {
+    const name = (custName.value || "").trim() || "自定义球";
+    const hp = Math.max(1, Math.min(999, parseInt(custHp.value, 10) || 100));
+    const speed = Math.max(25, Math.min(250, parseInt(custSpeed.value, 10) || 110));
+    const file = custFile.files && custFile.files[0];
+
+    const readFile = () =>
+      new Promise((resolve) => {
+        if (!file) {
+          resolve("");
+          return;
+        }
+        const fr = new FileReader();
+        fr.onload = () => resolve(typeof fr.result === "string" ? fr.result : "");
+        fr.onerror = () => resolve("");
+        fr.readAsDataURL(file);
+      });
+
+    readFile().then((imageDataUrl) => {
+      const id = "custom_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
+      customEntries.push({ id, label: name, baseHp: hp, speed, imageDataUrl });
+      saveCustomsToStorage();
+      refreshSelects();
+      renderCustomList();
+      custFile.value = "";
+      const d = registry[id];
+      if (d) preloadDefImage(d).then(() => draw());
+    });
+  });
+
+  resetMatch();
+  requestAnimationFrame(frame);
+})();
+  </script>
+</body>
+</html>
