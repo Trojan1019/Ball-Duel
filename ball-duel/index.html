@@ -246,6 +246,41 @@
       margin-top: 0.5rem;
       line-height: 1.4;
     }
+
+    .img-preview {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: #0d1117;
+      margin-top: 0.35rem;
+    }
+
+    #bd-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      background: rgba(26,35,50,0.96);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 10px 14px;
+      border-radius: 12px;
+      z-index: 9999;
+      font-size: 0.9rem;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      max-width: min(520px, calc(100vw - 24px));
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #bd-toast.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -294,36 +329,6 @@
       <p id="status"></p>
     </div>
 
-    <aside class="panel side-panel">
-      <h2>新增小球</h2>
-      <div class="row">
-        <label style="flex:1;min-width:120px">名称
-          <input type="text" id="custName" placeholder="例如：我的火球" maxlength="16" />
-        </label>
-      </div>
-      <div class="row">
-        <label style="flex:1;min-width:100px">血量
-          <input type="number" id="custHp" min="1" max="999" value="100" step="1" />
-        </label>
-        <label style="flex:1;min-width:100px">速度
-          <input type="number" id="custSpeed" min="25" max="250" value="110" step="5" />
-        </label>
-      </div>
-      <div class="row">
-        <label style="width:100%">外观图片（可选，整张图作为小球外观）
-          <input type="file" id="custFile" accept="image/*" />
-        </label>
-      </div>
-      <div class="row actions">
-        <button type="button" id="btnAddCustom">保存到列表</button>
-      </div>
-      <p class="hint">保存后出现在下拉框。自定义为近战球：碰撞伤害 11，质量 1，半径同标准球；图片为整张精灵铺满边长 2×半径。</p>
-      <div class="custom-list" id="customListWrap">
-        <strong style="color:var(--muted)">已保存的自定义：</strong>
-        <ul id="customList" style="margin:0.5rem 0 0;padding-left:1.1rem;list-style:none"></ul>
-      </div>
-    </aside>
-
     <section class="panel wide-panel data-panel" id="dataPanel">
       <h2 style="margin:0 0 0.5rem;font-size:1.05rem">小球数据管理</h2>
       <p class="hint" style="margin:0 0 0.5rem">编辑后点「保存当前」写入本地；预设与自定义分开保存。远程球可改 CD、飞弹伤害等。</p>
@@ -334,20 +339,62 @@
       </div>
       <div class="data-grid" id="dataGridPreset">
         <h3>通用</h3>
+        <label>名称 <input type="text" id="d_label" maxlength="16" /></label>
+        <label>攻击方式
+          <select id="d_attackMode">
+            <option value="melee">近战</option>
+            <option value="ranged">远程</option>
+            <option value="spinning">旋转</option>
+          </select>
+        </label>
         <label>血量 <input type="number" id="d_baseHp" min="1" max="999" step="1" /></label>
         <label>速度 <input type="number" id="d_speed" min="1" max="400" step="1" /></label>
         <label>半径 <input type="number" id="d_radius" min="4" max="80" step="1" /></label>
         <label>质量 <input type="number" id="d_mass" min="0.2" max="5" step="0.05" /></label>
-        <label>近战伤害 <input type="number" id="d_collisionDamage" min="0" max="99" step="1" /></label>
-        <label>后坐力（像素） <input type="number" id="d_recoil" min="0" max="60" step="1" /></label>
-        <h3>远程飞弹（仅远程球）</h3>
-        <label>发射间隔（秒） <input type="number" id="d_fireInterval" min="0.05" max="5" step="0.05" /></label>
-        <label>飞弹速度 <input type="number" id="d_rp_speed" min="20" max="500" step="5" /></label>
-        <label>飞弹伤害 <input type="number" id="d_rp_damage" min="1" max="99" step="1" /></label>
-        <label>飞弹半径 <input type="number" id="d_rp_radius" min="2" max="30" step="1" /></label>
-        <label>飞弹存活（秒） <input type="number" id="d_rp_lifetime" min="0.2" max="10" step="0.1" /></label>
-        <label>每次数量 <input type="number" id="d_rp_count" min="1" max="12" step="1" /></label>
-        <label>散射角（弧度） <input type="number" id="d_rp_spread" min="0" max="2" step="0.05" /></label>
+        <div id="d_meleeSection">
+          <label>近战伤害 <input type="number" id="d_collisionDamage" min="0" max="99" step="1" /></label>
+          <label>后坐力（像素） <input type="number" id="d_recoil" min="0" max="60" step="1" /></label>
+        </div>
+
+        <div id="d_rangedSection" style="display:none">
+          <h3>远程飞弹</h3>
+          <label>发射间隔（秒） <input type="number" id="d_fireInterval" min="0.05" max="5" step="0.05" /></label>
+          <label>飞弹速度 <input type="number" id="d_rp_speed" min="20" max="500" step="5" /></label>
+          <label>飞弹伤害 <input type="number" id="d_rp_damage" min="1" max="99" step="1" /></label>
+          <label>飞弹半径 <input type="number" id="d_rp_radius" min="2" max="30" step="1" /></label>
+          <label>飞弹存活（秒） <input type="number" id="d_rp_lifetime" min="0.2" max="10" step="0.1" /></label>
+          <label>每次数量 <input type="number" id="d_rp_count" min="1" max="12" step="1" /></label>
+          <label>散射角（弧度） <input type="number" id="d_rp_spread" min="0" max="2" step="0.05" /></label>
+        </div>
+
+        <div id="d_spinningSection" style="display:none">
+          <h3>旋转道具</h3>
+          <label>道具数量 <input type="number" id="d_spin_count" min="1" max="5" step="1" /></label>
+          <label>绕行半径 <input type="number" id="d_spin_orbitRadius" min="10" max="100" step="1" /></label>
+          <label>道具半径 <input type="number" id="d_spin_itemRadius" min="2" max="30" step="1" /></label>
+          <label>旋转速度（弧度/秒） <input type="number" id="d_spin_angSpeed" min="0.5" max="12" step="0.05" /></label>
+          <label>道具伤害 <input type="number" id="d_spin_damage" min="1" max="99" step="1" /></label>
+        </div>
+
+        <label style="margin-top:0.5rem">
+          外观图片（可选）
+          <input type="file" id="d_imageFile" accept="image/*" />
+          <img id="d_imagePreview" class="img-preview" style="display:none" />
+        </label>
+        <div id="d_rangedElementImageWrap" style="display:none">
+          <label style="margin-top:0.5rem">
+            远程生成元素图片（可选）
+            <input type="file" id="d_rp_imageFile" accept="image/*" />
+            <img id="d_rp_imagePreview" class="img-preview" style="display:none" />
+          </label>
+        </div>
+        <div id="d_spinningElementImageWrap" style="display:none">
+          <label style="margin-top:0.5rem">
+            旋转生成元素图片（可选）
+            <input type="file" id="d_spin_itemImageFile" accept="image/*" />
+            <img id="d_spin_itemImagePreview" class="img-preview" style="display:none" />
+          </label>
+        </div>
         <div class="data-actions">
           <button type="button" id="btnDataSave">保存当前</button>
           <button type="button" class="secondary" id="btnDataReset">恢复默认</button>
@@ -355,14 +402,110 @@
       </div>
       <div class="data-grid" id="dataGridCustom" style="display:none">
         <h3>自定义球</h3>
+        <label>名称 <input type="text" id="dc_label" maxlength="16" /></label>
+        <label>攻击方式
+          <select id="dc_attackMode">
+            <option value="melee">近战</option>
+            <option value="ranged">远程</option>
+            <option value="spinning">旋转</option>
+          </select>
+        </label>
         <label>血量 <input type="number" id="dc_baseHp" min="1" max="999" step="1" /></label>
         <label>速度 <input type="number" id="dc_speed" min="1" max="400" step="1" /></label>
         <label>半径 <input type="number" id="dc_radius" min="4" max="80" step="1" /></label>
-        <label>近战伤害 <input type="number" id="dc_collisionDamage" min="0" max="99" step="1" /></label>
-        <label>后坐力（像素） <input type="number" id="dc_recoil" min="0" max="60" step="1" /></label>
+        <div id="dc_meleeSection">
+          <label>近战伤害 <input type="number" id="dc_collisionDamage" min="0" max="99" step="1" /></label>
+          <label>后坐力（像素） <input type="number" id="dc_recoil" min="0" max="60" step="1" /></label>
+        </div>
+
+        <div id="dc_rangedSection" style="display:none">
+          <h3>远程飞弹</h3>
+          <label>发射间隔（秒） <input type="number" id="dc_fireInterval" min="0.05" max="5" step="0.05" /></label>
+          <label>飞弹速度 <input type="number" id="dc_rp_speed" min="20" max="500" step="5" /></label>
+          <label>飞弹伤害 <input type="number" id="dc_rp_damage" min="1" max="99" step="1" /></label>
+          <label>飞弹半径 <input type="number" id="dc_rp_radius" min="2" max="30" step="1" /></label>
+          <label>飞弹存活（秒） <input type="number" id="dc_rp_lifetime" min="0.2" max="10" step="0.1" /></label>
+          <label>每次数量 <input type="number" id="dc_rp_count" min="1" max="12" step="1" /></label>
+          <label>散射角（弧度） <input type="number" id="dc_rp_spread" min="0" max="2" step="0.05" /></label>
+        </div>
+
+        <div id="dc_spinningSection" style="display:none">
+          <h3>旋转道具</h3>
+          <label>道具数量 <input type="number" id="dc_spin_count" min="1" max="5" step="1" /></label>
+          <label>绕行半径 <input type="number" id="dc_spin_orbitRadius" min="10" max="100" step="1" /></label>
+          <label>道具半径 <input type="number" id="dc_spin_itemRadius" min="2" max="30" step="1" /></label>
+          <label>旋转速度（弧度/秒） <input type="number" id="dc_spin_angSpeed" min="0.5" max="12" step="0.05" /></label>
+          <label>道具伤害 <input type="number" id="dc_spin_damage" min="1" max="99" step="1" /></label>
+        </div>
+
+        <label style="margin-top:0.5rem">
+          外观图片（可选）
+          <input type="file" id="dc_imageFile" accept="image/*" />
+          <img id="dc_imagePreview" class="img-preview" style="display:none" />
+        </label>
+        <div id="dc_rangedElementImageWrap" style="display:none">
+          <label style="margin-top:0.5rem">
+            远程生成元素图片（可选）
+            <input type="file" id="dc_rp_imageFile" accept="image/*" />
+            <img id="dc_rp_imagePreview" class="img-preview" style="display:none" />
+          </label>
+        </div>
+        <div id="dc_spinningElementImageWrap" style="display:none">
+          <label style="margin-top:0.5rem">
+            旋转生成元素图片（可选）
+            <input type="file" id="dc_spin_itemImageFile" accept="image/*" />
+            <img id="dc_spin_itemImagePreview" class="img-preview" style="display:none" />
+          </label>
+        </div>
         <div class="data-actions">
           <button type="button" id="btnDataSaveCustom">保存自定义</button>
         </div>
+      </div>
+
+      <div style="margin-top:1rem">
+        <h2 style="margin:0 0 0.5rem;font-size:1.05rem">新增小球</h2>
+        <p class="hint" style="margin:0 0 0.5rem">保存后出现在下拉框。自定义默认近战；你可在下方数据管理里切换攻击方式与参数。</p>
+        <div class="row">
+          <label style="flex:1;min-width:120px">名称
+            <input type="text" id="custName" placeholder="例如：我的火球" maxlength="16" />
+          </label>
+        </div>
+        <div class="row">
+          <label style="flex:1;min-width:100px">血量
+            <input type="number" id="custHp" min="1" max="999" value="100" step="1" />
+          </label>
+          <label style="flex:1;min-width:100px">速度
+            <input type="number" id="custSpeed" min="25" max="250" value="110" step="5" />
+          </label>
+        </div>
+        <div class="row">
+          <label style="width:100%">外观图片（可选，整张图作为小球外观）
+            <input type="file" id="custFile" accept="image/*" />
+          </label>
+        </div>
+        <div class="row actions">
+          <button type="button" id="btnAddCustom">保存到列表</button>
+        </div>
+        <div class="custom-list" id="customListWrap">
+          <strong style="color:var(--muted)">已保存的自定义：</strong>
+          <ul id="customList" style="margin:0.5rem 0 0;padding-left:1.1rem;list-style:none"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel wide-panel record-panel">
+      <h2 style="margin:0 0 0.5rem;font-size:1.05rem">对战记录与数据导出</h2>
+      <p class="hint" style="margin:0 0 0.5rem">记录胜负、小球信息和随机种子。点击「回放」可复现同一对局。</p>
+      <div class="row actions">
+        <button type="button" id="btnExportData">导出本地数据</button>
+        <button type="button" class="secondary" id="btnImportData">导入本地数据</button>
+        <input type="file" id="importDataFile" accept="application/json" style="display:none" />
+        <button type="button" class="secondary danger" id="btnClearMatchHistory">清空对战记录</button>
+      </div>
+      <p id="recordStatus" class="hint" style="margin:0.5rem 0 0;"></p>
+      <div class="custom-list" id="matchHistoryWrap">
+        <strong style="color:var(--muted)">已保存的对局：</strong>
+        <ul id="matchList" style="margin:0.5rem 0 0;padding-left:1.1rem;list-style:none"></ul>
       </div>
     </section>
   </div>
@@ -371,9 +514,40 @@
 (function () {
   const STORAGE_KEY = "ball-duel-customs-v1";
   const TYPE_OVERRIDES_KEY = "ball-duel-type-overrides-v1";
+  const MATCH_HISTORY_KEY = "ball-duel-match-history-v1";
+  const EXPORT_SCHEMA_VERSION = 1;
 
   /** 玩家对预设球的覆盖（与 TYPES 深度合并） */
   let typeOverrides = {};
+
+  // --- 确定性回放：用种子驱动随机数 ---
+  let matchRng = null;
+  function mulberry32(seed) {
+    let t = seed >>> 0;
+    return function () {
+      t += 0x6d2b79f5;
+      let x = Math.imul(t ^ (t >>> 15), 1 | t);
+      x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function makeSeed() {
+    try {
+      const a = new Uint32Array(1);
+      crypto.getRandomValues(a);
+      return a[0] >>> 0;
+    } catch (_) {
+      return Math.floor(Math.random() * 2 ** 32) >>> 0;
+    }
+  }
+  function rand() {
+    return matchRng ? matchRng() : Math.random();
+  }
+
+  // --- 对战记录/导出导入 ---
+  let matchHistory = [];
+  let currentMatch = null; // live/replay match config
+  let matchArenaShrinkSecOverride = null;
 
   /** rangedProjectile：远程球碰撞不造成近战伤害，改为发射飞弹 */
   const TYPES = {
@@ -450,6 +624,7 @@
         radius: 6,
         lifetime: 2.2,
         fireInterval: 0.32,
+        imageDataUrl: "",
       },
     },
     /** 远程：三发散射 */
@@ -473,6 +648,7 @@
         radius: 4,
         lifetime: 1.6,
         fireInterval: 0.52,
+        imageDataUrl: "",
       },
     },
     /** 远程：单发慢速高伤大弹 */
@@ -496,6 +672,29 @@
         radius: 9,
         lifetime: 2.8,
         fireInterval: 0.45,
+        imageDataUrl: "",
+      },
+    },
+    /** 旋转：环绕自身旋转的攻击道具，碰到对方扣血但不击退 */
+    spinBlade: {
+      id: "spinBlade",
+      label: "旋转刀",
+      baseHp: 100,
+      radius: 29,
+      speed: 105,
+      mass: 1,
+      collisionDamage: 0,
+      recoil: 12,
+      attackMode: "spinning",
+      color: "#ffdd57",
+      imageDataUrl: "",
+      spinItem: {
+        count: 2,
+        orbitRadius: 36,
+        itemRadius: 7,
+        angularSpeed: 6,
+        damage: 18,
+        itemImageDataUrl: "",
       },
     },
   };
@@ -518,11 +717,18 @@
     const base = TYPES[id];
     if (!base) return null;
     const ov = typeOverrides[id] || {};
-    const out = { ...base, ...ov, attackMode: base.attackMode };
-    if (base.rangedProjectile) {
-      out.rangedProjectile = { ...base.rangedProjectile, ...(ov.rangedProjectile || {}) };
+    const out = { ...base, ...ov, attackMode: (ov.attackMode || base.attackMode) };
+    if (out.attackMode === "ranged") {
+      out.rangedProjectile = { ...(base.rangedProjectile || {}), ...(ov.rangedProjectile || {}) };
+      if (Object.keys(out.rangedProjectile).length === 0) delete out.rangedProjectile;
     } else {
       delete out.rangedProjectile;
+    }
+    if (out.attackMode === "spinning") {
+      out.spinItem = { ...(base.spinItem || {}), ...(ov.spinItem || {}) };
+      if (Object.keys(out.spinItem).length === 0) delete out.spinItem;
+    } else {
+      delete out.spinItem;
     }
     return out;
   }
@@ -567,11 +773,22 @@
   const dataGridPreset = document.getElementById("dataGridPreset");
   const dataGridCustom = document.getElementById("dataGridCustom");
   const d_baseHp = document.getElementById("d_baseHp");
+  const d_label = document.getElementById("d_label");
+  const d_attackMode = document.getElementById("d_attackMode");
+  const d_imageFile = document.getElementById("d_imageFile");
+  const d_imagePreview = document.getElementById("d_imagePreview");
+  const d_rp_imageFile = document.getElementById("d_rp_imageFile");
+  const d_rp_imagePreview = document.getElementById("d_rp_imagePreview");
+  const d_spin_itemImageFile = document.getElementById("d_spin_itemImageFile");
+  const d_spin_itemImagePreview = document.getElementById("d_spin_itemImagePreview");
   const d_speed = document.getElementById("d_speed");
   const d_radius = document.getElementById("d_radius");
   const d_mass = document.getElementById("d_mass");
   const d_collisionDamage = document.getElementById("d_collisionDamage");
   const d_recoil = document.getElementById("d_recoil");
+  const d_meleeSection = document.getElementById("d_meleeSection");
+  const d_rangedSection = document.getElementById("d_rangedSection");
+  const d_spinningSection = document.getElementById("d_spinningSection");
   const d_fireInterval = document.getElementById("d_fireInterval");
   const d_rp_speed = document.getElementById("d_rp_speed");
   const d_rp_damage = document.getElementById("d_rp_damage");
@@ -579,19 +796,81 @@
   const d_rp_lifetime = document.getElementById("d_rp_lifetime");
   const d_rp_count = document.getElementById("d_rp_count");
   const d_rp_spread = document.getElementById("d_rp_spread");
+  const d_spin_count = document.getElementById("d_spin_count");
+  const d_spin_orbitRadius = document.getElementById("d_spin_orbitRadius");
+  const d_spin_itemRadius = document.getElementById("d_spin_itemRadius");
+  const d_spin_angSpeed = document.getElementById("d_spin_angSpeed");
+  const d_spin_damage = document.getElementById("d_spin_damage");
   const btnDataSave = document.getElementById("btnDataSave");
   const btnDataReset = document.getElementById("btnDataReset");
   const dc_baseHp = document.getElementById("dc_baseHp");
+  const dc_label = document.getElementById("dc_label");
+  const dc_attackMode = document.getElementById("dc_attackMode");
+  const dc_imageFile = document.getElementById("dc_imageFile");
+  const dc_imagePreview = document.getElementById("dc_imagePreview");
+  const dc_rp_imageFile = document.getElementById("dc_rp_imageFile");
+  const dc_rp_imagePreview = document.getElementById("dc_rp_imagePreview");
+  const dc_spin_itemImageFile = document.getElementById("dc_spin_itemImageFile");
+  const dc_spin_itemImagePreview = document.getElementById("dc_spin_itemImagePreview");
   const dc_speed = document.getElementById("dc_speed");
   const dc_radius = document.getElementById("dc_radius");
   const dc_collisionDamage = document.getElementById("dc_collisionDamage");
   const dc_recoil = document.getElementById("dc_recoil");
+  const dc_meleeSection = document.getElementById("dc_meleeSection");
+  const dc_rangedSection = document.getElementById("dc_rangedSection");
+  const dc_spinningSection = document.getElementById("dc_spinningSection");
+  const d_rangedElementImageWrap = document.getElementById("d_rangedElementImageWrap");
+  const d_spinningElementImageWrap = document.getElementById("d_spinningElementImageWrap");
+  const dc_rangedElementImageWrap = document.getElementById("dc_rangedElementImageWrap");
+  const dc_spinningElementImageWrap = document.getElementById("dc_spinningElementImageWrap");
+  const dc_fireInterval = document.getElementById("dc_fireInterval");
+  const dc_rp_speed = document.getElementById("dc_rp_speed");
+  const dc_rp_damage = document.getElementById("dc_rp_damage");
+  const dc_rp_radius = document.getElementById("dc_rp_radius");
+  const dc_rp_lifetime = document.getElementById("dc_rp_lifetime");
+  const dc_rp_count = document.getElementById("dc_rp_count");
+  const dc_rp_spread = document.getElementById("dc_rp_spread");
+  const dc_spin_count = document.getElementById("dc_spin_count");
+  const dc_spin_orbitRadius = document.getElementById("dc_spin_orbitRadius");
+  const dc_spin_itemRadius = document.getElementById("dc_spin_itemRadius");
+  const dc_spin_angSpeed = document.getElementById("dc_spin_angSpeed");
+  const dc_spin_damage = document.getElementById("dc_spin_damage");
   const btnDataSaveCustom = document.getElementById("btnDataSaveCustom");
+  const btnExportData = document.getElementById("btnExportData");
+  const btnImportData = document.getElementById("btnImportData");
+  const importDataFile = document.getElementById("importDataFile");
+  const btnClearMatchHistory = document.getElementById("btnClearMatchHistory");
+  const matchList = document.getElementById("matchList");
+  const recordStatus = document.getElementById("recordStatus");
 
   /** id -> 完整 def（含预加载的 imageEl） */
   const registry = {};
 
   let customEntries = [];
+
+  // 用于“数据管理面板”中图片选择的暂存（只在点保存时写入）
+  let pendingPresetImageDataUrl = null;
+  let pendingCustomImageDataUrl = null;
+  let pendingPresetRangedElementImageDataUrl = undefined;
+  let pendingPresetSpinElementImageDataUrl = undefined;
+  let pendingCustomRangedElementImageDataUrl = undefined;
+  let pendingCustomSpinElementImageDataUrl = undefined;
+
+  function setImagePreview(imgEl, dataUrl) {
+    if (!imgEl) return;
+    if (dataUrl) {
+      imgEl.src = dataUrl;
+      imgEl.style.display = "block";
+    } else {
+      imgEl.src = "";
+      imgEl.style.display = "none";
+    }
+  }
+
+  async function readFirstFileDataURL(fileInput) {
+    const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+    return readFileAsDataURL(file);
+  }
 
   function loadCustomsFromStorage() {
     try {
@@ -610,18 +889,22 @@
         label: e.label,
         baseHp: e.baseHp,
         speed: e.speed,
+        attackMode: e.attackMode || "melee",
         imageDataUrl: e.imageDataUrl || "",
       };
       if (e.radius != null) o.radius = e.radius;
       if (e.mass != null) o.mass = e.mass;
       if (e.collisionDamage != null) o.collisionDamage = e.collisionDamage;
       if (e.recoil != null) o.recoil = e.recoil;
+      if (e.rangedProjectile) o.rangedProjectile = e.rangedProjectile;
+      if (e.spinItem) o.spinItem = e.spinItem;
       return o;
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
   }
 
   function defFromEntry(entry) {
+    const attackMode = entry.attackMode || "melee";
     return {
       id: entry.id,
       label: entry.label,
@@ -631,29 +914,115 @@
       mass: entry.mass != null ? entry.mass : 1,
       collisionDamage: entry.collisionDamage != null ? entry.collisionDamage : 11,
       recoil: entry.recoil != null ? entry.recoil : 12,
-      attackMode: "melee",
+      attackMode,
       color: "#a371f7",
       imageDataUrl: entry.imageDataUrl || "",
+      rangedProjectile:
+        attackMode === "ranged"
+          ? {
+              count: entry.rangedProjectile?.count ?? 1,
+              spread: entry.rangedProjectile?.spread ?? 0,
+              speed: entry.rangedProjectile?.speed ?? 180,
+              damage: entry.rangedProjectile?.damage ?? 12,
+              radius: entry.rangedProjectile?.radius ?? 6,
+              lifetime: entry.rangedProjectile?.lifetime ?? 2.2,
+              fireInterval: entry.rangedProjectile?.fireInterval ?? 0.4,
+              imageDataUrl: entry.rangedProjectile?.imageDataUrl || "",
+            }
+          : undefined,
+      spinItem:
+        attackMode === "spinning"
+          ? {
+              count: entry.spinItem?.count ?? 2,
+              orbitRadius: entry.spinItem?.orbitRadius ?? 36,
+              itemRadius: entry.spinItem?.itemRadius ?? 7,
+              angularSpeed: entry.spinItem?.angularSpeed ?? 6,
+              damage: entry.spinItem?.damage ?? 18,
+              itemImageDataUrl: entry.spinItem?.itemImageDataUrl || "",
+            }
+          : undefined,
     };
   }
 
   function preloadDefImage(def) {
-    if (!def.imageDataUrl) {
-      def.imageEl = null;
-      return Promise.resolve();
-    }
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        def.imageEl = img;
-        resolve();
-      };
-      img.onerror = () => {
-        def.imageEl = null;
-        resolve();
-      };
-      img.src = def.imageDataUrl;
-    });
+    const tasks = [];
+
+    // 球外观图片
+    tasks.push(
+      new Promise((resolve) => {
+        if (!def.imageDataUrl) {
+          def.imageEl = null;
+          resolve();
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          def.imageEl = img;
+          resolve();
+        };
+        img.onerror = () => {
+          def.imageEl = null;
+          resolve();
+        };
+        img.src = def.imageDataUrl;
+      })
+    );
+
+    // 远程飞弹图片
+    tasks.push(
+      new Promise((resolve) => {
+        if (!def.rangedProjectile) {
+          if (def.rangedProjectile) def.rangedProjectile.imageEl = null;
+          resolve();
+          return;
+        }
+        const rp = def.rangedProjectile;
+        if (!rp.imageDataUrl) {
+          rp.imageEl = null;
+          resolve();
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          rp.imageEl = img;
+          resolve();
+        };
+        img.onerror = () => {
+          rp.imageEl = null;
+          resolve();
+        };
+        img.src = rp.imageDataUrl;
+      })
+    );
+
+    // 旋转道具图片
+    tasks.push(
+      new Promise((resolve) => {
+        if (!def.spinItem) {
+          if (def.spinItem) def.spinItem.itemImageEl = null;
+          resolve();
+          return;
+        }
+        const si = def.spinItem;
+        if (!si.itemImageDataUrl) {
+          si.itemImageEl = null;
+          resolve();
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          si.itemImageEl = img;
+          resolve();
+        };
+        img.onerror = () => {
+          si.itemImageEl = null;
+          resolve();
+        };
+        img.src = si.itemImageDataUrl;
+      })
+    );
+
+    return Promise.all(tasks).then(() => {});
   }
 
   function rebuildRegistry() {
@@ -679,7 +1048,9 @@
       const atk =
         t.attackMode === "ranged"
           ? "远程"
-          : `攻${t.collisionDamage}`;
+          : t.attackMode === "spinning"
+            ? `旋转${t.spinItem ? t.spinItem.damage : 0}`
+            : `攻${t.collisionDamage}`;
       o.textContent = `${t.label}（${atk} 血${t.baseHp}）`;
       presets.appendChild(o);
     });
@@ -739,6 +1110,103 @@
     dataPick.value = ok ? prev : Object.keys(TYPES)[0];
   }
 
+  function applyPresetAttackModeUI(mode) {
+    const m = mode || (d_attackMode ? d_attackMode.value : "melee");
+    if (d_meleeSection) d_meleeSection.style.display = m === "melee" ? "block" : "none";
+    if (d_rangedSection) d_rangedSection.style.display = m === "ranged" ? "block" : "none";
+    if (d_spinningSection) d_spinningSection.style.display = m === "spinning" ? "block" : "none";
+    if (d_rangedElementImageWrap) d_rangedElementImageWrap.style.display = m === "ranged" ? "block" : "none";
+    if (d_spinningElementImageWrap) d_spinningElementImageWrap.style.display = m === "spinning" ? "block" : "none";
+
+    // 当切换到某种攻击方式时，给一组合理默认值（避免空输入看起来“没参数”）
+    if (m === "ranged" && TYPES.sniper && TYPES.sniper.rangedProjectile) {
+      const rp = TYPES.sniper.rangedProjectile;
+      const maybeSet = (el, v) => {
+        if (!el) return;
+        const n = parseFloat(el.value);
+        if (!Number.isFinite(n)) el.value = v;
+      };
+      maybeSet(d_fireInterval, rp.fireInterval);
+      maybeSet(d_rp_speed, rp.speed);
+      maybeSet(d_rp_damage, rp.damage);
+      maybeSet(d_rp_radius, rp.radius);
+      maybeSet(d_rp_lifetime, rp.lifetime);
+      if (d_rp_count) {
+        const n = parseFloat(d_rp_count.value);
+        if (!Number.isFinite(n)) d_rp_count.value = rp.count;
+      }
+      maybeSet(d_rp_spread, rp.spread);
+    } else if (m === "spinning" && TYPES.spinBlade && TYPES.spinBlade.spinItem) {
+      const si = TYPES.spinBlade.spinItem;
+      const maybeSet = (el, v) => {
+        if (!el) return;
+        const n = parseFloat(el.value);
+        if (!Number.isFinite(n)) el.value = v;
+      };
+      maybeSet(d_spin_count, si.count);
+      maybeSet(d_spin_orbitRadius, si.orbitRadius);
+      maybeSet(d_spin_itemRadius, si.itemRadius);
+      maybeSet(d_spin_angSpeed, si.angularSpeed);
+      maybeSet(d_spin_damage, si.damage);
+    } else if (m === "melee") {
+      const maybeSet = (el, v) => {
+        if (!el) return;
+        const n = parseFloat(el.value);
+        if (!Number.isFinite(n)) el.value = v;
+      };
+      maybeSet(d_collisionDamage, 11);
+      maybeSet(d_recoil, 12);
+    }
+  }
+
+  function applyCustomAttackModeUI(mode) {
+    const m = mode || (dc_attackMode ? dc_attackMode.value : "melee");
+    if (dc_meleeSection) dc_meleeSection.style.display = m === "melee" ? "block" : "none";
+    if (dc_rangedSection) dc_rangedSection.style.display = m === "ranged" ? "block" : "none";
+    if (dc_spinningSection) dc_spinningSection.style.display = m === "spinning" ? "block" : "none";
+    if (dc_rangedElementImageWrap) dc_rangedElementImageWrap.style.display = m === "ranged" ? "block" : "none";
+    if (dc_spinningElementImageWrap) dc_spinningElementImageWrap.style.display = m === "spinning" ? "block" : "none";
+
+    if (m === "ranged" && TYPES.sniper && TYPES.sniper.rangedProjectile) {
+      const rp = TYPES.sniper.rangedProjectile;
+      const maybeSet = (el, v) => {
+        if (!el) return;
+        const n = parseFloat(el.value);
+        if (!Number.isFinite(n)) el.value = v;
+      };
+      maybeSet(dc_fireInterval, rp.fireInterval);
+      maybeSet(dc_rp_speed, rp.speed);
+      maybeSet(dc_rp_damage, rp.damage);
+      maybeSet(dc_rp_radius, rp.radius);
+      maybeSet(dc_rp_lifetime, rp.lifetime);
+      if (dc_rp_count) {
+        const n = parseFloat(dc_rp_count.value);
+        if (!Number.isFinite(n)) dc_rp_count.value = rp.count;
+      }
+      maybeSet(dc_rp_spread, rp.spread);
+    } else if (m === "spinning" && TYPES.spinBlade && TYPES.spinBlade.spinItem) {
+      const si = TYPES.spinBlade.spinItem;
+      const maybeSet = (el, v) => {
+        if (!el) return;
+        const n = parseFloat(el.value);
+        if (!Number.isFinite(n)) el.value = v;
+      };
+      maybeSet(dc_spin_count, si.count);
+      maybeSet(dc_spin_orbitRadius, si.orbitRadius);
+      maybeSet(dc_spin_itemRadius, si.itemRadius);
+      maybeSet(dc_spin_angSpeed, si.angularSpeed);
+      maybeSet(dc_spin_damage, si.damage);
+    } else if (m === "melee") {
+      const maybeSet = (el, v) => {
+        if (!el) return;
+        const n = parseFloat(el.value);
+        if (!Number.isFinite(n)) el.value = v;
+      };
+      maybeSet(dc_collisionDamage, 11);
+      maybeSet(dc_recoil, 12);
+    }
+  }
+
   function populateDataForm() {
     if (!dataPick) return;
     const v = dataPick.value;
@@ -748,44 +1216,93 @@
       const id = v.slice(2);
       const e = customEntries.find((x) => x.id === id);
       if (!e) return;
-      dc_baseHp.value = e.baseHp;
-      dc_speed.value = e.speed;
-      dc_radius.value = e.radius != null ? e.radius : 29;
-      dc_collisionDamage.value = e.collisionDamage != null ? e.collisionDamage : 11;
-      if (dc_recoil) dc_recoil.value = e.recoil != null ? e.recoil : 12;
+      pendingCustomImageDataUrl = null;
+      pendingCustomRangedElementImageDataUrl = undefined;
+      pendingCustomSpinElementImageDataUrl = undefined;
+      if (dc_imageFile) dc_imageFile.value = "";
+      if (dc_rp_imageFile) dc_rp_imageFile.value = "";
+      if (dc_spin_itemImageFile) dc_spin_itemImageFile.value = "";
+      if (dc_label) dc_label.value = e.label;
+      setImagePreview(dc_imagePreview, e.imageDataUrl || "");
+
+      const def = defFromEntry(e);
+      dc_baseHp.value = def.baseHp;
+      dc_speed.value = def.speed;
+      dc_radius.value = def.radius;
+      dc_collisionDamage.value = def.collisionDamage;
+      if (dc_recoil) dc_recoil.value = def.recoil != null ? def.recoil : 12;
+
+      if (dc_attackMode) dc_attackMode.value = def.attackMode || "melee";
+      const rp = def.rangedProjectile;
+      const spin = def.spinItem;
+      if (rp) {
+        if (dc_fireInterval) dc_fireInterval.value = rp.fireInterval;
+        if (dc_rp_speed) dc_rp_speed.value = rp.speed;
+        if (dc_rp_damage) dc_rp_damage.value = rp.damage;
+        if (dc_rp_radius) dc_rp_radius.value = rp.radius;
+        if (dc_rp_lifetime) dc_rp_lifetime.value = rp.lifetime;
+        if (dc_rp_count) dc_rp_count.value = rp.count;
+        if (dc_rp_spread) dc_rp_spread.value = rp.spread;
+        if (dc_rp_imagePreview) setImagePreview(dc_rp_imagePreview, rp.imageDataUrl || "");
+      }
+      if (spin) {
+        if (dc_spin_count) dc_spin_count.value = spin.count;
+        if (dc_spin_orbitRadius) dc_spin_orbitRadius.value = spin.orbitRadius;
+        if (dc_spin_itemRadius) dc_spin_itemRadius.value = spin.itemRadius;
+        if (dc_spin_angSpeed) dc_spin_angSpeed.value = spin.angularSpeed;
+        if (dc_spin_damage) dc_spin_damage.value = spin.damage;
+        if (dc_spin_itemImagePreview) setImagePreview(dc_spin_itemImagePreview, spin.itemImageDataUrl || "");
+      }
+      if (dc_rp_imagePreview && !rp) setImagePreview(dc_rp_imagePreview, "");
+      if (dc_spin_itemImagePreview && !spin) setImagePreview(dc_spin_itemImagePreview, "");
+      applyCustomAttackModeUI(def.attackMode || "melee");
       return;
     }
     dataGridPreset.style.display = "grid";
     dataGridCustom.style.display = "none";
     const t = mergeTypeDef(v);
+    pendingPresetImageDataUrl = null;
+    pendingPresetRangedElementImageDataUrl = undefined;
+    pendingPresetSpinElementImageDataUrl = undefined;
+    if (d_imageFile) d_imageFile.value = "";
+    if (d_rp_imageFile) d_rp_imageFile.value = "";
+    if (d_spin_itemImageFile) d_spin_itemImageFile.value = "";
+    if (d_label) d_label.value = t.label;
+    setImagePreview(d_imagePreview, t.imageDataUrl || "");
     d_baseHp.value = t.baseHp;
     d_speed.value = t.speed;
     d_radius.value = t.radius;
     d_mass.value = t.mass;
     d_collisionDamage.value = t.collisionDamage;
     if (d_recoil) d_recoil.value = t.recoil != null ? t.recoil : 12;
+
+    if (d_attackMode) d_attackMode.value = t.attackMode || "melee";
+
     const rp = t.rangedProjectile;
-    const isRanged = t.attackMode === "ranged";
-    [
-      d_fireInterval,
-      d_rp_speed,
-      d_rp_damage,
-      d_rp_radius,
-      d_rp_lifetime,
-      d_rp_count,
-      d_rp_spread,
-    ].forEach((el) => {
-      if (el) el.disabled = !isRanged;
-    });
     if (rp) {
-      d_fireInterval.value = rp.fireInterval;
-      d_rp_speed.value = rp.speed;
-      d_rp_damage.value = rp.damage;
-      d_rp_radius.value = rp.radius;
-      d_rp_lifetime.value = rp.lifetime;
-      d_rp_count.value = rp.count;
-      d_rp_spread.value = rp.spread;
+      if (d_fireInterval) d_fireInterval.value = rp.fireInterval;
+      if (d_rp_speed) d_rp_speed.value = rp.speed;
+      if (d_rp_damage) d_rp_damage.value = rp.damage;
+      if (d_rp_radius) d_rp_radius.value = rp.radius;
+      if (d_rp_lifetime) d_rp_lifetime.value = rp.lifetime;
+      if (d_rp_count) d_rp_count.value = rp.count;
+      if (d_rp_spread) d_rp_spread.value = rp.spread;
+      if (d_rp_imagePreview) setImagePreview(d_rp_imagePreview, rp.imageDataUrl || "");
     }
+
+    const spin = t.spinItem;
+    if (spin) {
+      if (d_spin_count) d_spin_count.value = spin.count;
+      if (d_spin_orbitRadius) d_spin_orbitRadius.value = spin.orbitRadius;
+      if (d_spin_itemRadius) d_spin_itemRadius.value = spin.itemRadius;
+      if (d_spin_angSpeed) d_spin_angSpeed.value = spin.angularSpeed;
+      if (d_spin_damage) d_spin_damage.value = spin.damage;
+      if (d_spin_itemImagePreview) setImagePreview(d_spin_itemImagePreview, spin.itemImageDataUrl || "");
+    }
+    if (d_rp_imagePreview && !rp) setImagePreview(d_rp_imagePreview, "");
+    if (d_spin_itemImagePreview && !spin) setImagePreview(d_spin_itemImagePreview, "");
+
+    applyPresetAttackModeUI(t.attackMode || "melee");
   }
 
   function renderCustomList() {
@@ -811,8 +1328,106 @@
     });
   }
 
+  function setRecordStatus(msg) {
+    if (!recordStatus) return;
+    recordStatus.textContent = msg || "";
+  }
+
+  function loadMatchHistoryFromStorage() {
+    try {
+      const raw = localStorage.getItem(MATCH_HISTORY_KEY);
+      const v = raw ? JSON.parse(raw) : [];
+      matchHistory = Array.isArray(v) ? v : [];
+    } catch {
+      matchHistory = [];
+    }
+  }
+
+  function saveMatchHistoryToStorage() {
+    try {
+      localStorage.setItem(MATCH_HISTORY_KEY, JSON.stringify(matchHistory));
+    } catch (e) {
+      // 忽略写入失败，避免影响胜利结算与渲染
+    }
+  }
+
+  function renderMatchHistory() {
+    if (!matchList) return;
+    matchList.innerHTML = "";
+    if (!matchHistory.length) return;
+
+    // 最新的在上面
+    const ordered = [...matchHistory].sort((a, b) => (b.finishedAt || 0) - (a.finishedAt || 0));
+    ordered.slice(0, 30).forEach((rec) => {
+      const li = document.createElement("li");
+      const span = document.createElement("span");
+
+      const resultLabel =
+        rec.result === "A_WIN" ? "A 胜" :
+        rec.result === "B_WIN" ? "B 胜" :
+        rec.result === "DRAW" ? "平局" :
+        "已结束";
+
+      const seedShort = rec.seed != null ? String(rec.seed).slice(0, 8) : "";
+      span.textContent = `${resultLabel} · A:${rec.aLabel || "?"} B:${rec.bLabel || "?"} · seed:${seedShort}`;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mini";
+      btn.textContent = "回放";
+      btn.addEventListener("click", () => {
+        startMatchFromReplay(rec);
+      });
+
+      li.appendChild(span);
+      li.appendChild(btn);
+      matchList.appendChild(li);
+    });
+  }
+
+  function downloadJSON(obj, filename) {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function showToast(msg) {
+    if (!msg) return;
+    let el = document.getElementById("bd-toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "bd-toast";
+      document.body.appendChild(el);
+    }
+    el.textContent = String(msg);
+    el.classList.add("show");
+    window.setTimeout(() => {
+      el.classList.remove("show");
+    }, 1800);
+  }
+
+  function readFileAsDataURL(file) {
+    return new Promise((resolve) => {
+      if (!file) {
+        resolve("");
+        return;
+      }
+      const fr = new FileReader();
+      fr.onload = () => resolve(typeof fr.result === "string" ? fr.result : "");
+      fr.onerror = () => resolve("");
+      fr.readAsDataURL(file);
+    });
+  }
+
   loadTypeOverrides();
   loadCustomsFromStorage();
+  loadMatchHistoryFromStorage();
   rebuildRegistry();
   fillSelect(pickA);
   fillSelect(pickB);
@@ -821,6 +1436,72 @@
   renderCustomList();
   refreshDataPick();
   populateDataForm();
+  renderMatchHistory();
+
+  if (btnClearMatchHistory) {
+    btnClearMatchHistory.addEventListener("click", () => {
+      matchHistory = [];
+      saveMatchHistoryToStorage();
+      renderMatchHistory();
+      setRecordStatus("已清空对战记录。");
+    });
+  }
+
+  if (btnExportData) {
+    btnExportData.addEventListener("click", () => {
+      const payload = {
+        schemaVersion: EXPORT_SCHEMA_VERSION,
+        exportedAt: new Date().toISOString(),
+        customs: customEntries,
+        typeOverrides,
+        matchHistory,
+      };
+      downloadJSON(payload, `ball-duel-export-${new Date().toISOString().slice(0, 10)}.json`);
+      setRecordStatus("导出成功。");
+      showToast("导出成功");
+    });
+  }
+
+  if (btnImportData && importDataFile) {
+    btnImportData.addEventListener("click", () => {
+      importDataFile.value = "";
+      importDataFile.click();
+    });
+    importDataFile.addEventListener("change", async () => {
+      try {
+        setRecordStatus("正在解析文件…");
+        const f = importDataFile.files && importDataFile.files[0];
+        if (!f) return;
+        const text = await f.text();
+        const obj = JSON.parse(text);
+        if (!obj || typeof obj !== "object") throw new Error("bad payload");
+
+        // 允许缺字段：只导入你传来的部分
+        if (Array.isArray(obj.customs)) customEntries = obj.customs;
+        if (obj.typeOverrides && typeof obj.typeOverrides === "object") typeOverrides = obj.typeOverrides;
+        if (Array.isArray(obj.matchHistory)) matchHistory = obj.matchHistory;
+
+        saveCustomsToStorage();
+        saveTypeOverrides();
+        saveMatchHistoryToStorage();
+
+        rebuildRegistry();
+        fillSelect(pickA);
+        fillSelect(pickB);
+        // dataPick 的选项和值可能会变，刷新后重新 populate
+        refreshDataPick();
+        populateDataForm();
+        renderCustomList();
+        renderMatchHistory();
+        resetMatch();
+        setRecordStatus("导入成功。");
+        showToast("导入成功");
+      } catch (e) {
+        setRecordStatus("导入失败：文件格式不正确。");
+        showToast("导入失败");
+      }
+    });
+  }
 
   let running = false;
   let balls = [];
@@ -829,15 +1510,22 @@
   /** @type {{x:number,y:number,r:number,life:number}[]} */
   let deathFlashes = [];
   let physicsAccum = 0;
+  // 固定步长下的“模拟时间”，用于确定性回放（避免 performance.now 抖动影响物理/判定）
+  let simTimeSec = 0;
   let lastT = performance.now();
-  /** 对战开始时间（用于场地收缩） */
-  let matchStartTime = 0;
+  let matchStartTime = 0; // 保留字段：不再用于场地收缩逻辑
   /** 本渲染帧内是否已对本对球施加过后坐力（避免多子步重复位移） */
   let pairRecoilAppliedThisFrame = false;
   /** 单方获胜后的结算展示（球居中 + WINNER 文案 + 庆祝音效） */
   let victorySettled = false;
+  let currentDefA = null;
+  let currentDefB = null;
 
   function getArenaShrinkDurationSec() {
+    if (matchArenaShrinkSecOverride != null) {
+      const v = Number(matchArenaShrinkSecOverride);
+      if (Number.isFinite(v) && v > 0) return v;
+    }
     const v = parseFloat(arenaShrinkSec && arenaShrinkSec.value);
     return Number.isFinite(v) && v > 0 ? v : 45;
   }
@@ -849,7 +1537,7 @@
       return { left: 0, top: 0, right: cw, bottom: ch, width: cw, height: ch };
     }
     const dur = getArenaShrinkDurationSec();
-    const t = Math.min(1, (performance.now() - matchStartTime) / 1000 / dur);
+    const t = Math.min(1, simTimeSec / dur);
     const w = cw * (1 - 0.5 * t);
     const h = ch * (1 - 0.5 * t);
     const left = (cw - w) / 2;
@@ -992,6 +1680,7 @@
         r: rp.radius,
         damage: rp.damage,
         owner: attacker.side,
+        imgEl: rp.imageEl || null,
         life: rp.lifetime,
       });
     }
@@ -1050,12 +1739,45 @@
     }
   }
 
+  /** 旋转道具：环绕自身的碰撞体，每次碰到对方扣血（不击退） */
+  function tickSpinningAttack() {
+    if (!running || balls.length !== 2) return;
+    const [a, b] = balls;
+
+    for (const attacker of [a, b]) {
+      if (attacker.def.attackMode !== "spinning") continue;
+      const defender = attacker.side === "a" ? b : a;
+      const si = attacker.def.spinItem;
+      if (!si) continue;
+
+      const count = Math.max(1, si.count ?? 1);
+      const orbitRadius = si.orbitRadius ?? attacker.def.radius;
+      const itemRadius = si.itemRadius ?? 7;
+      const dmg = si.damage ?? 10;
+      const baseAngle = attacker.spinAngle || 0;
+
+      for (let i = 0; i < count; i++) {
+        const ang = baseAngle + (i * Math.PI * 2) / count;
+        const ix = attacker.x + Math.cos(ang) * orbitRadius;
+        const iy = attacker.y + Math.sin(ang) * orbitRadius;
+
+        const ddx = defender.x - ix;
+        const ddy = defender.y - iy;
+        const rr = defender.def.radius + itemRadius;
+        if (ddx * ddx + ddy * ddy < rr * rr) {
+          if (damageBallIfVulnerable(defender, dmg)) playProjectileHit();
+          break; // invuln 会阻止其它道具继续造成二次伤害
+        }
+      }
+    }
+  }
+
   function getDef(typeId) {
     return registry[typeId] || mergeTypeDef("standard");
   }
 
-  function makeBall(side, typeId) {
-    const def = getDef(typeId);
+  function makeBall(side, typeOrDef) {
+    const def = typeof typeOrDef === "string" ? getDef(typeOrDef) : typeOrDef;
     const { left, top, right, bottom } = getArenaBounds();
     const margin = 48;
     const midY = (top + bottom) / 2;
@@ -1064,8 +1786,10 @@
         ? left + margin + def.radius
         : right - margin - def.radius;
     const y = midY + (side === "a" ? -30 : 30);
-    const angle = side === "a" ? (Math.random() * 0.6 + 0.2) * Math.PI : (Math.random() * 0.6 - 0.8) * Math.PI;
-    const sp = def.speed * (0.88 + Math.random() * 0.12);
+    const angle = side === "a"
+      ? (rand() * 0.6 + 0.2) * Math.PI
+      : (rand() * 0.6 - 0.8) * Math.PI;
+    const sp = def.speed * (0.88 + rand() * 0.12);
     return {
       side,
       def,
@@ -1076,10 +1800,11 @@
       hp: def.baseHp,
       maxHp: def.baseHp,
       /** 远程：距下次连发已累积的时间（秒） */
-      fireTimer: def.attackMode === "ranged" ? Math.random() * 0.2 : 0,
+      fireTimer: def.attackMode === "ranged" ? rand() * 0.2 : 0,
       hitFlash: 0,
-      /** 无敌截止：performance.now() 小于此值时不扣血；0 表示未处于无敌 */
+      /** 无敌截止：simTimeSec*1000 小于此值时不扣血；0 表示未处于无敌 */
       invulnUntil: 0,
+      spinAngle: def.attackMode === "spinning" ? rand() * Math.PI * 2 : 0,
     };
   }
 
@@ -1090,7 +1815,7 @@
   /** 仅在不在无敌时扣血并进入无敌；返回是否实际扣血 */
   function damageBallIfVulnerable(b, amount) {
     if (amount <= 0) return false;
-    const now = performance.now();
+    const now = simTimeSec * 1000;
     if (now < (b.invulnUntil || 0)) return false;
     b.hp -= amount;
     b.invulnUntil = now + DAMAGE_INVULN_MS;
@@ -1098,16 +1823,16 @@
     return true;
   }
 
-  function resetHudNames() {
-    const ta = getDef(pickA.value);
-    const tb = getDef(pickB.value);
+  function resetHudNames(da, db) {
+    const ta = da || currentDefA || getDef(pickA.value);
+    const tb = db || currentDefB || getDef(pickB.value);
     hudAName.textContent = `球 A · ${ta.label}`;
     hudBName.textContent = `球 B · ${tb.label}`;
   }
 
   function updateHud() {
-    const ta = getDef(pickA.value);
-    const tb = getDef(pickB.value);
+    const ta = currentDefA || getDef(pickA.value);
+    const tb = currentDefB || getDef(pickB.value);
     if (balls.length === 2) {
       const [a, b] = balls;
       const pa = Math.max(0, (a.hp / a.maxHp) * 100);
@@ -1151,10 +1876,35 @@
     }
     if (dying.length >= 2) {
       victorySettled = false;
-      statusEl.textContent = "平局：双方同时耗尽";
-      statusEl.className = "";
       balls = [];
       projectiles = [];
+      running = false;
+      btnStart.disabled = false;
+      btnStop.disabled = true;
+      setControlsDisabled(false);
+      statusEl.textContent = "平局：双方同时耗尽";
+      statusEl.className = "";
+
+      if (currentMatch && currentMatch.mode === "live") {
+        const rec = {
+          id: "m_" + Date.now().toString(36),
+          seed: currentMatch.seed,
+          arenaShrinkSec: currentMatch.arenaShrinkSec,
+          aPick: currentMatch.aPick,
+          bPick: currentMatch.bPick,
+          aDef: currentMatch.aDefSnapshot,
+          bDef: currentMatch.bDefSnapshot,
+          aLabel: currentMatch.aDefSnapshot?.label,
+          bLabel: currentMatch.bDefSnapshot?.label,
+          result: "DRAW",
+          finishedAt: Date.now(),
+        };
+        matchHistory = [rec, ...matchHistory].slice(0, 50);
+        saveMatchHistoryToStorage();
+        renderMatchHistory();
+      }
+
+      currentMatch = null;
       return;
     }
     const gone = dying[0];
@@ -1178,6 +1928,28 @@
         ? "球 B 获胜！可点「重置」或「开始对战」再来一局。"
         : "球 A 获胜！可点「重置」或「开始对战」再来一局。";
     statusEl.className = "win";
+
+    if (currentMatch && currentMatch.mode === "live") {
+      const result = gone.side === "a" ? "B_WIN" : "A_WIN";
+      const rec = {
+        id: "m_" + Date.now().toString(36),
+        seed: currentMatch.seed,
+        arenaShrinkSec: currentMatch.arenaShrinkSec,
+        aPick: currentMatch.aPick,
+        bPick: currentMatch.bPick,
+        aDef: currentMatch.aDefSnapshot,
+        bDef: currentMatch.bDefSnapshot,
+        aLabel: currentMatch.aDefSnapshot?.label,
+        bLabel: currentMatch.bDefSnapshot?.label,
+        result,
+        finishedAt: Date.now(),
+      };
+      matchHistory = [rec, ...matchHistory].slice(0, 50);
+      saveMatchHistoryToStorage();
+      renderMatchHistory();
+    }
+
+    currentMatch = null;
   }
 
   function wallCollide(b) {
@@ -1238,11 +2010,11 @@
       const relSpeed = Math.hypot(rvx0, rvy0);
       const bonus = relSpeed * SPEED_DAMAGE_FACTOR;
       let meleeDealt = false;
-      if (b1.def.attackMode !== "ranged") {
+      if (b1.def.attackMode === "melee") {
         const dmgTo2 = b1.def.collisionDamage + bonus;
         if (damageBallIfVulnerable(b2, dmgTo2)) meleeDealt = true;
       }
-      if (b2.def.attackMode !== "ranged") {
+      if (b2.def.attackMode === "melee") {
         const dmgTo1 = b2.def.collisionDamage + bonus;
         if (damageBallIfVulnerable(b1, dmgTo1)) meleeDealt = true;
       }
@@ -1309,6 +2081,7 @@
   function stepPhysics(dt) {
     if (!running || balls.length === 0) return;
 
+    simTimeSec += dt;
     for (const b of balls) {
       b.x += b.vx * dt;
       b.y += b.vy * dt;
@@ -1319,9 +2092,19 @@
       if (running) clampBallToArena(b);
     }
 
+    // 旋转道具：随时间推进旋转角度
+    for (const b of balls) {
+      if (b.def.attackMode !== "spinning") continue;
+      const si = b.def.spinItem;
+      if (!si) continue;
+      b.spinAngle += (si.angularSpeed || 0) * dt;
+    }
+
     if (balls.length >= 2) {
       resolveBallCollision(balls[0], balls[1]);
     }
+
+    tickSpinningAttack();
     tickRangedFire(dt);
     updateProjectiles(dt);
     cullDeadBalls();
@@ -1329,27 +2112,52 @@
   }
 
   function frame(now) {
-    let dt = (now - lastT) / 1000;
-    lastT = now;
-    if (dt > 0.25) dt = 0.25;
+    try {
+      let dt = (now - lastT) / 1000;
+      lastT = now;
+      if (dt > 0.25) dt = 0.25;
 
-    for (let i = deathFlashes.length - 1; i >= 0; i--) {
-      deathFlashes[i].life -= dt;
-      if (deathFlashes[i].life <= 0) deathFlashes.splice(i, 1);
+      for (let i = deathFlashes.length - 1; i >= 0; i--) {
+        deathFlashes[i].life -= dt;
+        if (deathFlashes[i].life <= 0) deathFlashes.splice(i, 1);
+      }
+
+      pairRecoilAppliedThisFrame = false;
+      physicsAccum += dt;
+      let steps = 0;
+      while (physicsAccum >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
+        stepPhysics(FIXED_DT);
+        physicsAccum -= FIXED_DT;
+        steps++;
+      }
+      if (steps === MAX_STEPS_PER_FRAME) physicsAccum = 0;
+
+      draw();
+    } catch (e) {
+      console.error(e);
     }
-
-    pairRecoilAppliedThisFrame = false;
-    physicsAccum += dt;
-    let steps = 0;
-    while (physicsAccum >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
-      stepPhysics(FIXED_DT);
-      physicsAccum -= FIXED_DT;
-      steps++;
-    }
-    if (steps === MAX_STEPS_PER_FRAME) physicsAccum = 0;
-
-    draw();
     requestAnimationFrame(frame);
+  }
+
+  const ballHitMaskWhiteCache = new Map(); // key: `${def.id}@${r}`
+  function getBallHitMaskWhite(def, r) {
+    if (!def || !def.imageEl || !(def.imageEl.complete && def.imageEl.naturalWidth > 0)) return null;
+    const sig = (def.imageDataUrl || "").slice(0, 24);
+    const key = `${def.id}@${Math.round(r)}@${sig}`;
+    if (ballHitMaskWhiteCache.has(key)) return ballHitMaskWhiteCache.get(key);
+    const size = Math.max(1, Math.round(r * 2));
+    const cvs = document.createElement("canvas");
+    cvs.width = size;
+    cvs.height = size;
+    const octx = cvs.getContext("2d", { willReadFrequently: false });
+    // 先填充白色，再用“图像的 alpha”把白色裁剪成透明区域形状
+    octx.fillStyle = "#fff";
+    octx.fillRect(0, 0, size, size);
+    octx.globalCompositeOperation = "destination-in";
+    octx.drawImage(def.imageEl, 0, 0, size, size);
+    octx.globalCompositeOperation = "source-over";
+    ballHitMaskWhiteCache.set(key, cvs);
+    return cvs;
   }
 
   function drawBall(b) {
@@ -1380,21 +2188,27 @@
       const k = Math.min(1, b.hitFlash / HIT_FLASH_DURATION);
       ctx.save();
       ctx.globalAlpha = 0.35 + k * 0.45;
-      ctx.fillStyle = "#fff";
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, r * 1.05, 0, Math.PI * 2);
-      ctx.fill();
+      const mask = getBallHitMaskWhite(b.def, r);
+      if (mask) {
+        ctx.drawImage(mask, b.x - r, b.y - r, r * 2, r * 2);
+      } else {
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, r * 1.05, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
     const hpStr = String(Math.max(0, Math.ceil(b.hp)));
     ctx.font = "bold 14px system-ui,Segoe UI,sans-serif";
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    ctx.textBaseline = "top";
     ctx.lineWidth = 4;
     ctx.strokeStyle = "rgba(0,0,0,0.88)";
     ctx.fillStyle = "#fff";
-    ctx.strokeText(hpStr, b.x, b.y);
-    ctx.fillText(hpStr, b.x, b.y);
+    const hpY = b.y + r + 2;
+    ctx.strokeText(hpStr, b.x, hpY);
+    ctx.fillText(hpStr, b.x, hpY);
   }
 
   function drawDeathFlashes() {
@@ -1411,6 +2225,18 @@
   }
 
   function drawProjectile(p) {
+    if (p.imgEl && p.imgEl.complete && p.imgEl.naturalWidth > 0) {
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.drawImage(p.imgEl, p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+      ctx.strokeStyle = "rgba(255,255,255,0.55)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
     const g = ctx.createRadialGradient(
       p.x - p.r * 0.35,
       p.y - p.r * 0.35,
@@ -1433,6 +2259,51 @@
     ctx.strokeStyle = "rgba(255,255,255,0.55)";
     ctx.lineWidth = 1.2;
     ctx.stroke();
+  }
+
+  function drawSpinningItems() {
+    if (!balls || !balls.length) return;
+    for (const b of balls) {
+      if (b.def.attackMode !== "spinning") continue;
+      const si = b.def.spinItem;
+      if (!si) continue;
+      const count = Math.max(1, si.count ?? 1);
+      const orbitRadius = si.orbitRadius ?? b.def.radius;
+      const itemRadius = si.itemRadius ?? 7;
+      const baseAngle = b.spinAngle || 0;
+      const itemImg = si.itemImageEl || null;
+      for (let i = 0; i < count; i++) {
+        const ang = baseAngle + (i * Math.PI * 2) / count;
+        const ix = b.x + Math.cos(ang) * orbitRadius;
+        const iy = b.y + Math.sin(ang) * orbitRadius;
+
+        if (itemImg && itemImg.complete && itemImg.naturalWidth > 0) {
+          ctx.save();
+          ctx.drawImage(itemImg, ix - itemRadius, iy - itemRadius, itemRadius * 2, itemRadius * 2);
+          ctx.strokeStyle = "rgba(255,255,255,0.55)";
+          ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          ctx.arc(ix, iy, itemRadius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+          continue;
+        }
+
+        // 让道具始终比球更亮一点，便于看清命中范围
+        const c1 = lighten(b.def.color, 0.35);
+        const c2 = b.def.color;
+        const g = ctx.createRadialGradient(ix - itemRadius * 0.35, iy - itemRadius * 0.35, 0, ix, iy, itemRadius);
+        g.addColorStop(0, c1);
+        g.addColorStop(1, c2);
+        ctx.beginPath();
+        ctx.arc(ix, iy, itemRadius, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.55)";
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+      }
+    }
   }
 
   function draw() {
@@ -1466,6 +2337,7 @@
     drawDeathFlashes();
     for (const p of projectiles) drawProjectile(p);
     for (const b of balls) drawBall(b);
+    drawSpinningItems();
 
     if (victorySettled && balls.length === 1) {
       const b = balls[0];
@@ -1515,21 +2387,138 @@
     if (btnDataSaveCustom) btnDataSaveCustom.disabled = locked;
   }
 
+  function deepCloneJSON(obj) {
+    return obj == null ? obj : JSON.parse(JSON.stringify(obj));
+  }
+
+  function defToSnapshot(def) {
+    if (!def) return null;
+    const out = {
+      id: def.id,
+      label: def.label,
+      baseHp: def.baseHp,
+      radius: def.radius,
+      speed: def.speed,
+      mass: def.mass,
+      collisionDamage: def.collisionDamage,
+      recoil: def.recoil,
+      attackMode: def.attackMode,
+      color: def.color,
+      imageDataUrl: def.imageDataUrl || "",
+    };
+    if (def.rangedProjectile) {
+      const rp = def.rangedProjectile;
+      out.rangedProjectile = {
+        count: rp.count,
+        spread: rp.spread,
+        speed: rp.speed,
+        damage: rp.damage,
+        radius: rp.radius,
+        lifetime: rp.lifetime,
+        fireInterval: rp.fireInterval,
+        imageDataUrl: rp.imageDataUrl || "",
+      };
+    }
+    if (def.spinItem) {
+      const si = def.spinItem;
+      out.spinItem = {
+        count: si.count,
+        orbitRadius: si.orbitRadius,
+        itemRadius: si.itemRadius,
+        angularSpeed: si.angularSpeed,
+        damage: si.damage,
+        itemImageDataUrl: si.itemImageDataUrl || "",
+      };
+    }
+    return out;
+  }
+
+  async function startMatchFromReplay(rec) {
+    if (!rec || !rec.aDef || !rec.bDef) return;
+
+    victorySettled = false;
+    statusEl.textContent = "";
+    statusEl.className = "";
+    physicsAccum = 0;
+    lastT = performance.now();
+    projectiles = [];
+    deathFlashes = [];
+    running = false;
+
+    simTimeSec = 0;
+    matchArenaShrinkSecOverride = Number(rec.arenaShrinkSec);
+    if (!Number.isFinite(matchArenaShrinkSecOverride) || matchArenaShrinkSecOverride <= 0) {
+      matchArenaShrinkSecOverride = null;
+    }
+
+    const seed = Number(rec.seed) >>> 0;
+    matchRng = mulberry32(seed);
+
+    currentMatch = {
+      mode: "replay",
+      seed,
+      arenaShrinkSec: matchArenaShrinkSecOverride,
+    };
+
+    const da = deepCloneJSON(rec.aDef);
+    const db = deepCloneJSON(rec.bDef);
+    currentDefA = da;
+    currentDefB = db;
+
+    await Promise.all([preloadDefImage(da), preloadDefImage(db)]);
+    balls = [makeBall("a", da), makeBall("b", db)];
+    resetHudNames(da, db);
+    updateHud();
+    running = true;
+
+    btnStart.disabled = true;
+    btnStop.disabled = false;
+    setControlsDisabled(true);
+  }
+
   async function startMatch() {
     victorySettled = false;
     statusEl.textContent = "";
     statusEl.className = "";
     physicsAccum = 0;
+    lastT = performance.now();
     projectiles = [];
     deathFlashes = [];
-    running = true;
-    matchStartTime = performance.now();
-    const da = getDef(pickA.value);
-    const db = getDef(pickB.value);
+    running = false;
+    simTimeSec = 0;
+    currentDefA = null;
+    currentDefB = null;
+    matchArenaShrinkSecOverride = null;
+
+    const aPick = pickA.value;
+    const bPick = pickB.value;
+    const da = getDef(aPick);
+    const db = getDef(bPick);
+
+    // 为本局生成随机种子，用于可复现的“确定性随机”
+    const seed = makeSeed();
+    matchRng = mulberry32(seed);
+    matchArenaShrinkSecOverride = getArenaShrinkDurationSec();
+
+    currentMatch = {
+      mode: "live",
+      seed,
+      arenaShrinkSec: matchArenaShrinkSecOverride,
+      aPick,
+      bPick,
+      aDefSnapshot: defToSnapshot(da),
+      bDefSnapshot: defToSnapshot(db),
+      aLabel: da.label,
+      bLabel: db.label,
+    };
+
+    currentDefA = da;
+    currentDefB = db;
     await Promise.all([preloadDefImage(da), preloadDefImage(db)]);
-    balls = [makeBall("a", pickA.value), makeBall("b", pickB.value)];
+    balls = [makeBall("a", da), makeBall("b", db)];
     resetHudNames();
     updateHud();
+    running = true;
     btnStart.disabled = true;
     btnStop.disabled = false;
     setControlsDisabled(true);
@@ -1544,13 +2533,22 @@
     statusEl.textContent = "";
     statusEl.className = "";
     physicsAccum = 0;
+    lastT = performance.now();
     matchStartTime = 0;
+    simTimeSec = 0;
+    matchRng = null;
+    matchArenaShrinkSecOverride = null;
+    currentMatch = null;
+    currentDefA = null;
+    currentDefB = null;
     projectiles = [];
     deathFlashes = [];
     const da = getDef(pickA.value);
     const db = getDef(pickB.value);
     Promise.all([preloadDefImage(da), preloadDefImage(db)]).then(() => {
-      balls = [makeBall("a", pickA.value), makeBall("b", pickB.value)];
+      currentDefA = da;
+      currentDefB = db;
+      balls = [makeBall("a", da), makeBall("b", db)];
       resetHudNames();
       updateHud();
       draw();
@@ -1564,16 +2562,68 @@
     btnStart.disabled = false;
     btnStop.disabled = true;
     setControlsDisabled(false);
+    matchRng = null;
+    matchArenaShrinkSecOverride = null;
+    currentMatch = null;
   });
   btnReset.addEventListener("click", resetMatch);
 
   if (dataPick) dataPick.addEventListener("change", populateDataForm);
+
+  if (d_attackMode) d_attackMode.addEventListener("change", () => applyPresetAttackModeUI(d_attackMode.value));
+  if (dc_attackMode) dc_attackMode.addEventListener("change", () => applyCustomAttackModeUI(dc_attackMode.value));
+
+  if (d_imageFile) {
+    d_imageFile.addEventListener("change", async () => {
+      const file = d_imageFile.files && d_imageFile.files[0];
+      const dataUrl = await readFileAsDataURL(file);
+      pendingPresetImageDataUrl = dataUrl || null;
+      setImagePreview(d_imagePreview, pendingPresetImageDataUrl);
+    });
+  }
+  if (d_rp_imageFile) {
+    d_rp_imageFile.addEventListener("change", async () => {
+      const file = d_rp_imageFile.files && d_rp_imageFile.files[0];
+      pendingPresetRangedElementImageDataUrl = await readFileAsDataURL(file);
+      if (d_rp_imagePreview) setImagePreview(d_rp_imagePreview, pendingPresetRangedElementImageDataUrl);
+    });
+  }
+  if (d_spin_itemImageFile) {
+    d_spin_itemImageFile.addEventListener("change", async () => {
+      const file = d_spin_itemImageFile.files && d_spin_itemImageFile.files[0];
+      pendingPresetSpinElementImageDataUrl = await readFileAsDataURL(file);
+      if (d_spin_itemImagePreview) setImagePreview(d_spin_itemImagePreview, pendingPresetSpinElementImageDataUrl);
+    });
+  }
+  if (dc_imageFile) {
+    dc_imageFile.addEventListener("change", async () => {
+      const file = dc_imageFile.files && dc_imageFile.files[0];
+      const dataUrl = await readFileAsDataURL(file);
+      pendingCustomImageDataUrl = dataUrl || null;
+      setImagePreview(dc_imagePreview, pendingCustomImageDataUrl);
+    });
+  }
+  if (dc_rp_imageFile) {
+    dc_rp_imageFile.addEventListener("change", async () => {
+      const file = dc_rp_imageFile.files && dc_rp_imageFile.files[0];
+      pendingCustomRangedElementImageDataUrl = await readFileAsDataURL(file);
+      if (dc_rp_imagePreview) setImagePreview(dc_rp_imagePreview, pendingCustomRangedElementImageDataUrl);
+    });
+  }
+  if (dc_spin_itemImageFile) {
+    dc_spin_itemImageFile.addEventListener("change", async () => {
+      const file = dc_spin_itemImageFile.files && dc_spin_itemImageFile.files[0];
+      pendingCustomSpinElementImageDataUrl = await readFileAsDataURL(file);
+      if (dc_spin_itemImagePreview) setImagePreview(dc_spin_itemImagePreview, pendingCustomSpinElementImageDataUrl);
+    });
+  }
 
   if (btnDataSave) {
     btnDataSave.addEventListener("click", () => {
       const id = dataPick.value;
       if (id.startsWith("c:")) return;
       const base = TYPES[id];
+      const cur = mergeTypeDef(id);
       if (!base) return;
       const o = {
         baseHp: parseInt(d_baseHp.value, 10),
@@ -1583,9 +2633,24 @@
         collisionDamage: parseFloat(d_collisionDamage.value),
         recoil: parseFloat(d_recoil && d_recoil.value),
       };
-      if (Object.values(o).some((x) => !Number.isFinite(x))) return;
+      const attackMode = d_attackMode ? d_attackMode.value : base.attackMode;
+      o.attackMode = attackMode;
+      if (Object.values(o).some((x) => !Number.isFinite(x))) {
+        showToast("参数无效，未保存");
+        return;
+      }
+      const label = d_label ? (d_label.value || "").trim() : "";
+      if (label) o.label = label;
+      if (pendingPresetImageDataUrl) o.imageDataUrl = pendingPresetImageDataUrl;
       typeOverrides[id] = o;
-      if (base.attackMode === "ranged" && base.rangedProjectile) {
+      delete typeOverrides[id].rangedProjectile;
+      delete typeOverrides[id].spinItem;
+
+      if (attackMode === "ranged") {
+        const existingRpImage =
+          pendingPresetRangedElementImageDataUrl !== undefined
+            ? pendingPresetRangedElementImageDataUrl
+            : (cur && cur.rangedProjectile ? cur.rangedProjectile.imageDataUrl : base.rangedProjectile?.imageDataUrl) || "";
         const rp = {
           fireInterval: parseFloat(d_fireInterval.value),
           speed: parseFloat(d_rp_speed.value),
@@ -1594,9 +2659,33 @@
           lifetime: parseFloat(d_rp_lifetime.value),
           count: parseInt(d_rp_count.value, 10),
           spread: parseFloat(d_rp_spread.value),
+          imageDataUrl: existingRpImage,
         };
-        if (!Object.values(rp).some((x) => !Number.isFinite(x))) {
+        if (
+          [rp.fireInterval, rp.speed, rp.damage, rp.radius, rp.lifetime, rp.count, rp.spread].every((x) =>
+            Number.isFinite(x)
+          )
+        ) {
           typeOverrides[id].rangedProjectile = rp;
+        }
+      }
+      if (attackMode === "spinning") {
+        const existingSpinItemImage =
+          pendingPresetSpinElementImageDataUrl !== undefined
+            ? pendingPresetSpinElementImageDataUrl
+            : (cur && cur.spinItem ? cur.spinItem.itemImageDataUrl : base.spinItem?.itemImageDataUrl) || "";
+        const si = {
+          count: parseInt(d_spin_count.value, 10),
+          orbitRadius: parseFloat(d_spin_orbitRadius.value),
+          itemRadius: parseFloat(d_spin_itemRadius.value),
+          angularSpeed: parseFloat(d_spin_angSpeed.value),
+          damage: parseFloat(d_spin_damage.value),
+          itemImageDataUrl: existingSpinItemImage,
+        };
+        if (
+          [si.count, si.orbitRadius, si.itemRadius, si.angularSpeed, si.damage].every((x) => Number.isFinite(x))
+        ) {
+          typeOverrides[id].spinItem = si;
         }
       }
       saveTypeOverrides();
@@ -1611,6 +2700,7 @@
       else pickB.value = "spike";
       refreshDataPick();
       populateDataForm();
+      showToast("保存成功");
     });
   }
 
@@ -1641,6 +2731,8 @@
       const id = v.slice(2);
       const e = customEntries.find((x) => x.id === id);
       if (!e) return;
+      const label = dc_label ? (dc_label.value || "").trim() : "";
+      if (label) e.label = label;
       e.baseHp = Math.max(1, Math.min(999, parseInt(dc_baseHp.value, 10) || 100));
       e.speed = Math.max(1, Math.min(400, parseFloat(dc_speed.value) || 110));
       e.radius = Math.max(4, Math.min(80, parseFloat(dc_radius.value) || 29));
@@ -1648,9 +2740,56 @@
       if (dc_recoil) {
         e.recoil = Math.max(0, Math.min(60, parseFloat(dc_recoil.value) || 12));
       }
+      const attackMode = dc_attackMode ? dc_attackMode.value : "melee";
+      e.attackMode = attackMode;
+      const existingRpImageDataUrl = e.rangedProjectile?.imageDataUrl || "";
+      const existingSpinItemImageDataUrl = e.spinItem?.itemImageDataUrl || "";
+      delete e.rangedProjectile;
+      delete e.spinItem;
+
+      if (attackMode === "ranged") {
+        const rpImageDataUrl =
+          pendingCustomRangedElementImageDataUrl !== undefined
+            ? pendingCustomRangedElementImageDataUrl
+            : existingRpImageDataUrl;
+        const rp = {
+          fireInterval: parseFloat(dc_fireInterval.value),
+          speed: parseFloat(dc_rp_speed.value),
+          damage: parseFloat(dc_rp_damage.value),
+          radius: parseFloat(dc_rp_radius.value),
+          lifetime: parseFloat(dc_rp_lifetime.value),
+          count: parseInt(dc_rp_count.value, 10),
+          spread: parseFloat(dc_rp_spread.value),
+          imageDataUrl: rpImageDataUrl || "",
+        };
+        if (
+          [rp.fireInterval, rp.speed, rp.damage, rp.radius, rp.lifetime, rp.count, rp.spread].every((x) => Number.isFinite(x))
+        ) {
+          e.rangedProjectile = rp;
+        }
+      } else if (attackMode === "spinning") {
+        const siImageDataUrl =
+          pendingCustomSpinElementImageDataUrl !== undefined
+            ? pendingCustomSpinElementImageDataUrl
+            : existingSpinItemImageDataUrl;
+        const si = {
+          count: parseInt(dc_spin_count.value, 10),
+          orbitRadius: parseFloat(dc_spin_orbitRadius.value),
+          itemRadius: parseFloat(dc_spin_itemRadius.value),
+          angularSpeed: parseFloat(dc_spin_angSpeed.value),
+          damage: parseFloat(dc_spin_damage.value),
+          itemImageDataUrl: siImageDataUrl || "",
+        };
+        if ([si.count, si.orbitRadius, si.itemRadius, si.angularSpeed, si.damage].every((x) => Number.isFinite(x))) {
+          e.spinItem = si;
+        }
+      }
+      if (pendingCustomImageDataUrl) e.imageDataUrl = pendingCustomImageDataUrl;
       saveCustomsToStorage();
       refreshSelects();
+      renderCustomList();
       populateDataForm();
+      showToast("保存成功");
     });
   }
 
@@ -1674,13 +2813,14 @@
 
     readFile().then((imageDataUrl) => {
       const id = "custom_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
-      customEntries.push({ id, label: name, baseHp: hp, speed, imageDataUrl });
+      customEntries.push({ id, label: name, baseHp: hp, speed, attackMode: "melee", imageDataUrl });
       saveCustomsToStorage();
       refreshSelects();
       renderCustomList();
       custFile.value = "";
       const d = registry[id];
       if (d) preloadDefImage(d).then(() => draw());
+      showToast("保存成功");
     });
   });
 
