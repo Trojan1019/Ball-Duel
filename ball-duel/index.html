@@ -3,99 +3,189 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>双球对决</title>
+  <title>Cyber Ball Battle Arena · 双球对决</title>
   <style>
     :root {
-      --bg: #0f1419;
-      --panel: #1a2332;
-      --text: #e6edf3;
-      --muted: #8b9cb3;
-      --accent: #3d8bfd;
-      --danger: #f85149;
-      --ok: #3fb950;
+      --bg: #050810;
+      --bg-elev: rgba(12, 18, 32, 0.72);
+      --panel: rgba(14, 22, 40, 0.55);
+      --text: #f0f4fc;
+      --muted: #8aa0c4;
+      --cyan: #00ffff;
+      --cyan-dim: rgba(0, 255, 255, 0.35);
+      --orange: #ff8c00;
+      --orange-dim: rgba(255, 140, 0, 0.4);
+      --accent: #00c8ff;
+      --danger: #ff6b6b;
+      --ok: #39ffb6;
+      --glass-border: rgba(0, 255, 255, 0.22);
+      --glass-glow: 0 0 24px rgba(0, 255, 255, 0.08);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: "Segoe UI", system-ui, sans-serif;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       padding: 1rem;
+      position: relative;
+      overflow-x: hidden;
     }
-    .layout {
-      display: flex;
-      flex-wrap: wrap;
+    .cyber-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(0, 255, 255, 0.09), transparent 50%),
+        radial-gradient(ellipse 70% 40% at 85% 100%, rgba(255, 140, 0, 0.07), transparent 45%),
+        linear-gradient(180deg, #050810 0%, #080c18 100%);
+    }
+    .cyber-bg::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+      background-image:
+        linear-gradient(rgba(0, 255, 255, 0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.12) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .cyber-app {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
       gap: 1.25rem;
-      align-items: flex-start;
-      justify-content: center;
-      max-width: 1100px;
+      align-items: start;
+      max-width: 1280px;
       margin: 0 auto;
     }
-    .wide-panel {
-      max-width: 920px;
-      width: 100%;
-      margin: 0 auto 1rem;
+    @media (max-width: 960px) {
+      .cyber-app {
+        grid-template-columns: 1fr;
+      }
+      .cyber-sidebar__inner {
+        max-height: none !important;
+      }
     }
-    .data-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 0.6rem;
-      align-items: end;
-      margin-top: 0.75rem;
-    }
-    .data-grid label { font-size: 0.75rem; }
-    .data-grid h3 {
-      grid-column: 1 / -1;
-      margin: 0.5rem 0 0;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--muted);
-    }
-    .data-actions {
-      grid-column: 1 / -1;
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-top: 0.5rem;
-    }
-    .main-col {
+    .cyber-battle {
       display: flex;
       flex-direction: column;
       align-items: center;
-      flex: 1 1 520px;
-      min-width: 280px;
+      min-width: 0;
     }
-    h1 {
-      margin: 0 0 0.25rem;
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
-    .sub {
-      color: var(--muted);
-      font-size: 0.875rem;
-      margin-bottom: 1rem;
+    .cyber-head {
       text-align: center;
+      margin-bottom: 1rem;
     }
-    .panel {
+    .cyber-title {
+      margin: 0;
+      font-size: clamp(1.35rem, 3vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow:
+        0 0 20px var(--cyan-dim),
+        0 0 40px rgba(0, 200, 255, 0.15);
+    }
+    .cyber-sub {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin: 0.5rem 0 0;
+      line-height: 1.45;
+      max-width: 36rem;
+    }
+    .cyber-glass.panel {
       background: var(--panel);
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 14px;
+      padding: 1rem 1.2rem;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-glow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .cyber-control-panel {
       width: 100%;
       max-width: 520px;
       margin-bottom: 1rem;
-      border: 1px solid rgba(255,255,255,0.06);
     }
-    .side-panel {
-      flex: 0 1 300px;
-      min-width: 260px;
-      max-width: 340px;
+    .cyber-sidebar {
+      min-width: 0;
     }
-    .side-panel h2 {
-      margin: 0 0 0.75rem;
+    .cyber-sidebar__inner {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      padding-right: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--cyan-dim) transparent;
+    }
+    .cyber-sidebar__inner::-webkit-scrollbar {
+      width: 6px;
+    }
+    .cyber-sidebar__inner::-webkit-scrollbar-thumb {
+      background: var(--cyan-dim);
+      border-radius: 4px;
+    }
+    .cyber-sidebar .panel {
+      width: 100%;
+      max-width: none;
+      margin-bottom: 0;
+    }
+    .data-panel h2,
+    .record-panel h2 {
+      margin: 0 0 0.35rem;
       font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: #fff;
+      text-shadow: 0 0 12px var(--cyan-dim);
+    }
+    .data-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+    .data-grid label {
+      font-size: 0.78rem;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem 1rem;
+    }
+    .data-grid label input[type="text"],
+    .data-grid label input[type="number"],
+    .data-grid label select {
+      flex: 1;
+      min-width: 100px;
+      max-width: 200px;
+    }
+    .data-grid label input[type="file"] {
+      flex-basis: 100%;
+      max-width: none;
+    }
+    .data-grid h3 {
+      margin: 0.75rem 0 0.15rem;
+      font-size: 0.82rem;
       font-weight: 600;
-      color: var(--text);
+      color: var(--cyan);
+      text-shadow: 0 0 8px var(--cyan-dim);
+      width: 100%;
+    }
+    .data-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.65rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(0, 255, 255, 0.12);
     }
     .row {
       display: flex;
@@ -112,119 +202,213 @@
       font-size: 0.8rem;
       color: var(--muted);
     }
+    .cyber-picks .cyber-label--a select {
+      box-shadow: 0 0 0 1px var(--cyan-dim), 0 0 14px rgba(0, 255, 255, 0.12);
+    }
+    .cyber-picks .cyber-label--b select {
+      box-shadow: 0 0 0 1px var(--orange-dim), 0 0 14px rgba(255, 140, 0, 0.12);
+    }
     input[type="text"],
     input[type="number"] {
-      background: #0d1117;
+      background: rgba(4, 8, 18, 0.85);
       color: var(--text);
-      border: 1px solid rgba(255,255,255,0.12);
+      border: 1px solid rgba(0, 255, 255, 0.2);
       border-radius: 8px;
       padding: 0.45rem 0.6rem;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       width: 100%;
     }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.2);
+    }
     input[type="file"] {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--muted);
     }
     select {
-      background: #0d1117;
+      background: rgba(4, 8, 18, 0.9);
       color: var(--text);
-      border: 1px solid rgba(255,255,255,0.12);
+      border: 1px solid rgba(0, 255, 255, 0.25);
       border-radius: 8px;
-      padding: 0.45rem 0.6rem;
+      padding: 0.5rem 0.65rem;
       min-width: 140px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
     button {
-      background: var(--accent);
+      background: linear-gradient(180deg, #00b8e6, #0090b8);
       color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 0.55rem 1.1rem;
-      font-size: 0.95rem;
+      border: 1px solid rgba(0, 255, 255, 0.45);
+      border-radius: 10px;
+      padding: 0.55rem 1.15rem;
+      font-size: 0.92rem;
       font-weight: 600;
       cursor: pointer;
+      box-shadow: 0 0 18px rgba(0, 200, 255, 0.25);
     }
-    button:hover { filter: brightness(1.08); }
+    button:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 0 22px rgba(0, 255, 255, 0.35);
+    }
     button:disabled {
       opacity: 0.45;
       cursor: not-allowed;
       filter: none;
+      box-shadow: none;
     }
     button.secondary {
       background: transparent;
-      border: 1px solid rgba(255,255,255,0.2);
+      border: 1px solid rgba(0, 200, 255, 0.45);
       color: var(--text);
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.1);
     }
     button.danger {
-      background: rgba(248,81,73,0.2);
-      color: #f85149;
-      border: 1px solid rgba(248,81,73,0.4);
+      background: rgba(255, 80, 80, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(255, 100, 100, 0.45);
+      box-shadow: 0 0 12px rgba(255, 80, 80, 0.12);
+    }
+    #btnStart {
+      background: linear-gradient(180deg, #ff9f2a, var(--orange));
+      border-color: rgba(255, 180, 80, 0.7);
+      box-shadow:
+        0 0 20px rgba(255, 140, 0, 0.45),
+        0 0 40px rgba(255, 140, 0, 0.15);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+    #btnStart:hover:not(:disabled) {
+      filter: brightness(1.08);
+      box-shadow:
+        0 0 28px rgba(255, 140, 0, 0.55),
+        0 0 50px rgba(255, 140, 0, 0.2);
     }
     #arena-wrap {
       position: relative;
-      border-radius: 12px;
+      width: 100%;
+      max-width: 520px;
+      border-radius: 4px;
+      padding: 3px;
       overflow: hidden;
-      border: 2px solid rgba(255,255,255,0.12);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      background: linear-gradient(
+        135deg,
+        rgba(0, 255, 255, 0.55) 0%,
+        rgba(0, 255, 255, 0.12) 38%,
+        rgba(255, 140, 0, 0.12) 62%,
+        rgba(255, 140, 0, 0.55) 100%
+      );
+      box-shadow:
+        0 0 40px rgba(0, 255, 255, 0.12),
+        0 0 40px rgba(255, 140, 0, 0.08),
+        inset 0 0 60px rgba(0, 0, 0, 0.35);
     }
-    canvas {
+    #arena-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.08;
+      background-image:
+        linear-gradient(rgba(0, 255, 255, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.35) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    #arena-wrap canvas {
+      position: relative;
+      z-index: 0;
       display: block;
-      background: linear-gradient(180deg, #121820 0%, #0a0e12 100%);
+      max-width: 100%;
+      height: auto;
+      border-radius: 2px;
+      background: linear-gradient(180deg, #0c1220 0%, #060910 100%);
     }
     .hud {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
+      gap: 0.85rem;
       max-width: 520px;
       width: 100%;
-      margin-top: 0.75rem;
+      margin-top: 1rem;
     }
     .hud-card {
       background: var(--panel);
-      border-radius: 10px;
-      padding: 0.65rem 0.85rem;
-      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 0.7rem 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .hud-card.a {
+      border-color: rgba(0, 255, 255, 0.25);
+      box-shadow: 0 0 16px rgba(0, 255, 255, 0.08);
+    }
+    .hud-card.b {
+      border-color: rgba(255, 140, 0, 0.28);
+      box-shadow: 0 0 16px rgba(255, 140, 0, 0.08);
     }
     .hud-card .name {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-bottom: 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.02em;
     }
     .bar-outer {
-      height: 10px;
-      background: rgba(0,0,0,0.35);
-      border-radius: 5px;
+      height: 12px;
+      border-radius: 4px;
       overflow: hidden;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.06) 0 5px,
+        rgba(0, 0, 0, 0.25) 5px 7px
+      );
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .bar-inner {
       height: 100%;
-      border-radius: 5px;
+      border-radius: 3px;
+      transition: width 0.12s ease-out;
     }
-    .hud-card.a .bar-inner { background: linear-gradient(90deg, #58a6ff, #388bfd); }
-    .hud-card.b .bar-inner { background: linear-gradient(90deg, #f778ba, #db61a2); }
+    .hud-card.a .bar-inner {
+      background: linear-gradient(90deg, #00e5ff, #00a8cc);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+    .hud-card.b .bar-inner {
+      background: linear-gradient(90deg, #ffb347, var(--orange));
+      box-shadow: 0 0 10px rgba(255, 140, 0, 0.45);
+    }
     .hp-text {
-      margin-top: 0.35rem;
-      font-size: 0.85rem;
+      margin-top: 0.4rem;
+      font-size: 0.82rem;
       font-variant-numeric: tabular-nums;
+      color: var(--muted);
     }
     #status {
       text-align: center;
-      margin-top: 0.75rem;
+      margin-top: 0.85rem;
       min-height: 1.5rem;
-      font-size: 1rem;
+      font-size: 0.95rem;
+      color: var(--muted);
     }
-    #status.win { color: var(--ok); }
+    #status.win {
+      color: var(--ok);
+      text-shadow: 0 0 14px rgba(57, 255, 182, 0.45);
+      font-weight: 600;
+    }
     .actions {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.55rem;
       flex-wrap: wrap;
+      align-items: center;
     }
     .custom-list {
       margin-top: 0.75rem;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--muted);
-      max-height: 120px;
+      max-height: 160px;
       overflow-y: auto;
     }
     .custom-list li {
@@ -233,43 +417,49 @@
       align-items: center;
       gap: 0.5rem;
       margin-bottom: 0.35rem;
-      padding: 0.25rem 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(0, 255, 255, 0.08);
     }
     .custom-list button.mini {
-      padding: 0.2rem 0.5rem;
-      font-size: 0.75rem;
+      padding: 0.22rem 0.55rem;
+      font-size: 0.72rem;
     }
     .hint {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--muted);
-      margin-top: 0.5rem;
-      line-height: 1.4;
+      margin-top: 0.35rem;
+      line-height: 1.45;
     }
-
     .img-preview {
-      width: 64px;
-      height: 64px;
+      width: 72px;
+      height: 72px;
       object-fit: cover;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: #0d1117;
+      border: 1px solid rgba(0, 255, 255, 0.25);
+      background: rgba(4, 8, 18, 0.9);
       margin-top: 0.35rem;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.1);
     }
-
+    .cyber-section-title {
+      margin: 1rem 0 0.35rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.03em;
+    }
     #bd-toast {
       position: fixed;
       left: 50%;
       bottom: 22px;
       transform: translateX(-50%);
-      background: rgba(26,35,50,0.96);
+      background: rgba(10, 18, 36, 0.95);
       color: var(--text);
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 10px 14px;
+      border: 1px solid var(--cyan-dim);
+      padding: 10px 16px;
       border-radius: 12px;
       z-index: 9999;
-      font-size: 0.9rem;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      font-size: 0.88rem;
+      box-shadow: 0 0 24px rgba(0, 255, 255, 0.2), 0 12px 40px rgba(0, 0, 0, 0.45);
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.18s ease;
@@ -284,17 +474,20 @@
   </style>
 </head>
 <body>
-  <div class="layout">
-    <div class="main-col">
-      <h1>双球对决</h1>
-      <p class="sub">近战碰撞扣血；远程按间隔发射飞弹。一方血量归零后消失，另一方继续运动，点「停止」结束。</p>
+  <div class="cyber-bg" aria-hidden="true"></div>
+  <div class="cyber-app">
+    <section class="cyber-battle" aria-label="战场">
+      <header class="cyber-head">
+        <h1 class="cyber-title">Cyber Ball Battle Arena</h1>
+        <p class="cyber-sub">近战碰撞扣血；远程按间隔发射飞弹。一方血量归零后消失，另一方继续运动，点「停止」结束。</p>
+      </header>
 
-      <div class="panel">
-        <div class="row">
-          <label>球 A（左）
+      <div class="cyber-glass panel cyber-control-panel">
+        <div class="row cyber-picks">
+          <label class="cyber-label--a">球 A（左）
             <select id="pickA" aria-label="球 A 类型"></select>
           </label>
-          <label>球 B（右）
+          <label class="cyber-label--b">球 B（右）
             <select id="pickB" aria-label="球 B 类型"></select>
           </label>
         </div>
@@ -327,10 +520,12 @@
         </div>
       </div>
       <p id="status"></p>
-    </div>
+    </section>
 
-    <section class="panel wide-panel data-panel" id="dataPanel">
-      <h2 style="margin:0 0 0.5rem;font-size:1.05rem">小球数据管理</h2>
+    <aside class="cyber-sidebar" aria-label="数据与记录">
+      <div class="cyber-sidebar__inner">
+        <section class="cyber-glass panel data-panel" id="dataPanel">
+      <h2>Ball Data Management · 小球数据</h2>
       <p class="hint" style="margin:0 0 0.5rem">编辑后点「保存当前」写入本地；预设与自定义分开保存。远程球可改 CD、飞弹伤害等。</p>
       <div class="row">
         <label style="flex:1;min-width:200px">选择小球
@@ -463,8 +658,8 @@
       </div>
 
       <div style="margin-top:1rem">
-        <h2 style="margin:0 0 0.5rem;font-size:1.05rem">新增小球</h2>
-        <p class="hint" style="margin:0 0 0.5rem">保存后出现在下拉框。自定义默认近战；你可在下方数据管理里切换攻击方式与参数。</p>
+        <h2 class="cyber-section-title">Create New Ball · 新增小球</h2>
+        <p class="hint" style="margin:0 0 0.5rem">保存后出现在下拉框。自定义默认近战；你可在上方数据管理里切换攻击方式与参数。</p>
         <div class="row">
           <label style="flex:1;min-width:120px">名称
             <input type="text" id="custName" placeholder="例如：我的火球" maxlength="16" />
@@ -491,11 +686,11 @@
           <ul id="customList" style="margin:0.5rem 0 0;padding-left:1.1rem;list-style:none"></ul>
         </div>
       </div>
-    </section>
+        </section>
 
-    <section class="panel wide-panel record-panel">
-      <h2 style="margin:0 0 0.5rem;font-size:1.05rem">对战记录与数据导出</h2>
-      <p class="hint" style="margin:0 0 0.5rem">记录胜负、小球信息和随机种子。点击「回放」可复现同一对局。</p>
+        <section class="cyber-glass panel record-panel">
+      <h2>Match Log · 对战记录</h2>
+      <p class="hint" style="margin:0 0 0.5rem">记录胜负、小球信息和随机种子。点击「回放」可复现同一对局。支持导出 / 导入本地 JSON。</p>
       <div class="row actions">
         <button type="button" id="btnExportData">导出本地数据</button>
         <button type="button" class="secondary" id="btnImportData">导入本地数据</button>
@@ -507,7 +702,9 @@
         <strong style="color:var(--muted)">已保存的对局：</strong>
         <ul id="matchList" style="margin:0.5rem 0 0;padding-left:1.1rem;list-style:none"></ul>
       </div>
-    </section>
+        </section>
+      </div>
+    </aside>
   </div>
 
   <script>
